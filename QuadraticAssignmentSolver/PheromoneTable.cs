@@ -27,10 +27,10 @@ namespace QuadraticAssignmentSolver
             double[] depositAmounts = CalculateDepositAmounts(solutions);
 
             for (int location = 0; location < _problem.Size; location++)
-                for (int facility = 0; facility < _problem.Size; facility++)
-                    _table[location * _problem.Size + facility] =
-                        EvaporationRate * _table[location * _problem.Size + facility]
-                        + depositAmounts[location * _problem.Size + facility];
+            for (int facility = 0; facility < _problem.Size; facility++)
+                _table[location * _problem.Size + facility] =
+                    EvaporationRate * _table[location * _problem.Size + facility]
+                    + depositAmounts[location * _problem.Size + facility];
         }
 
         private double[] CalculateDepositAmounts(IEnumerable<(Solution, int)> solutions)

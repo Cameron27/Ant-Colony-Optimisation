@@ -104,7 +104,7 @@ namespace QuadraticAssignmentSolver
 
         public Solution Clone()
         {
-            return new Solution(_problem) { _facilitiesAtLocations = _facilitiesAtLocations.Clone() as int[] };
+            return new Solution(_problem) {_facilitiesAtLocations = _facilitiesAtLocations.Clone() as int[]};
         }
     }
 }

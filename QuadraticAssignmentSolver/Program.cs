@@ -1,9 +1,8 @@
 ﻿using System;
-using QuadraticAssignmentSolver.Utils;
 
 namespace QuadraticAssignmentSolver
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
@@ -17,7 +16,7 @@ namespace QuadraticAssignmentSolver
                 Console.WriteLine(e.Message);
                 return;
             }
-
+            
             (Solution, int) result = aco.Search(5, 10);
             result.DisplayResult();
         }

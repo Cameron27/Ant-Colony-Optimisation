@@ -18,7 +18,7 @@ namespace QuadraticAssignmentSolver.Experiments
         public Stats(Result[] results) : this()
         {
             (FitnessMin, FitnessMax, FitnessAverage, FitnessStandardDeviation) =
-                CalculateStats(results, r => r.Fitness, l => (int)l);
+                CalculateStats(results, r => r.Fitness, l => (int) l);
             (TimeMin, TimeMax, TimeAverage, TimeStandardDeviation) = CalculateStats(results, r => r.Time, l => l);
         }
 

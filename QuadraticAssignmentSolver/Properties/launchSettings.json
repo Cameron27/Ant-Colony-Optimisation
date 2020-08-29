@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "QuadraticAssignmentSolver": {
-      "commandName": "Project",
-      "commandLineArgs": "Examples/nug12.dat"
-    }
-  }
-}

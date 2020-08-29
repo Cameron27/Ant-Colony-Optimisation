@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace QuadraticAssignmentSolver.Utils
+namespace QuadraticAssignmentSolver
 {
     public static class Utils
     {

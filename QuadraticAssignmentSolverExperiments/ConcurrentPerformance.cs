@@ -9,7 +9,7 @@ namespace QuadraticAssignmentSolver.Experiments
         [TestMethod]
         public void Experiment()
         {
-            (Result[] results, Stats stats) = Utils.RunExperiments(new[] { "Examples/nug20.dat" }, 20);
+            (Result[] results, Stats stats) = Utils.RunExperiments(new[] {"Examples/nug20.dat"}, 20);
 
             Console.WriteLine(stats);
         }

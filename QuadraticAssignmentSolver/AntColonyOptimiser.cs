@@ -32,9 +32,8 @@ namespace QuadraticAssignmentSolver
 
                 (Solution, int) oldBest = best;
 
-                foreach ((Solution, int) result in results)
-                    if (result.Item2 < best.Item2)
-                        best = result;
+                foreach ((Solution, int) result in results.Where(result => result.Item2 < best.Item2))
+                    best = result;
 
                 if (oldBest.Item2 == best.Item2)
                 {

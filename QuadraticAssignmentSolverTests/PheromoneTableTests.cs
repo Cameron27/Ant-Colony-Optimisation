@@ -26,17 +26,17 @@ namespace QuadraticAssignmentSolver.Tests
             PheromoneTable pt = new PheromoneTable(p);
 
             for (int location = 0; location < p.Size; location++)
-                for (int facility = 0; facility < p.Size; facility++)
-                    Assert.AreEqual(pt.GetPheromones(location, facility), PheromoneTable.InitialValue);
+            for (int facility = 0; facility < p.Size; facility++)
+                Assert.AreEqual(pt.GetPheromones(location, facility), PheromoneTable.InitialValue);
 
-            pt.DepositPheromones(new[] { (s1, s1.EvaluateFitness()), (s2, s2.EvaluateFitness()) });
+            pt.DepositPheromones(new[] {(s1, s1.EvaluateFitness()), (s2, s2.EvaluateFitness())});
 
             for (int location = 0; location < p.Size; location++)
-                for (int facility = 0; facility < p.Size; facility++)
-                    Assert.AreEqual(pt.GetPheromones(location, facility),
-                        PheromoneTable.EvaporationRate * PheromoneTable.InitialValue
-                        + (s1.GetFacility(location) == facility ? 1d / s1.EvaluateFitness() : 0)
-                        + (s2.GetFacility(location) == facility ? 1d / s2.EvaluateFitness() : 0));
+            for (int facility = 0; facility < p.Size; facility++)
+                Assert.AreEqual(pt.GetPheromones(location, facility),
+                    PheromoneTable.EvaporationRate * PheromoneTable.InitialValue
+                    + (s1.GetFacility(location) == facility ? 1d / s1.EvaluateFitness() : 0)
+                    + (s2.GetFacility(location) == facility ? 1d / s2.EvaluateFitness() : 0));
         }
     }
 }

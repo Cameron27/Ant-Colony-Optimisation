@@ -43,11 +43,11 @@ namespace QuadraticAssignmentSolver.Tests
             Problem p = Problem.CreateFromFile("Examples/nug12.dat");
 
             for (int y = 0; y < p.Size; y++)
-                for (int x = 0; x < p.Size; x++)
-                {
-                    Assert.AreEqual(p.GetDistance(x, y), expectedDistances[y, x]);
-                    Assert.AreEqual(p.GetFlow(x, y), expectedFlows[y, x]);
-                }
+            for (int x = 0; x < p.Size; x++)
+            {
+                Assert.AreEqual(p.GetDistance(x, y), expectedDistances[y, x]);
+                Assert.AreEqual(p.GetFlow(x, y), expectedFlows[y, x]);
+            }
         }
 
         [TestMethod]

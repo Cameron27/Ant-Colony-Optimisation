@@ -10,7 +10,7 @@ namespace QuadraticAssignmentSolver
         private readonly int[] _distances;
         private readonly int[] _flows;
 
-        public Problem(int size)
+        private Problem(int size)
         {
             Size = size;
             int matrixSize = (size * size - size) / 2;
@@ -25,7 +25,7 @@ namespace QuadraticAssignmentSolver
             if (a == b) return 0;
             if (a < b) (a, b) = (b, a);
 
-            int i = (int)(b * Size + a - (b + 2) * ((b + 1) / 2F));
+            int i = (int) (b * Size + a - (b + 2) * ((b + 1) / 2F));
             return _distances[i];
         }
 
@@ -34,7 +34,7 @@ namespace QuadraticAssignmentSolver
             if (a == b) return 0;
             if (a < b) (a, b) = (b, a);
 
-            int i = (int)(b * Size + a - (b + 2) * ((b + 1) / 2F));
+            int i = (int) (b * Size + a - (b + 2) * ((b + 1) / 2F));
             return _flows[i];
         }
 
