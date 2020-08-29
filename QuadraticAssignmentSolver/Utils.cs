@@ -21,8 +21,6 @@ namespace QuadraticAssignmentSolver.Utils
                 if (i != solution.Size - 1) sb.Append(" ");
             }
 
-            sb.Append(Environment.NewLine);
-
             Console.WriteLine(sb.ToString());
         }
     }

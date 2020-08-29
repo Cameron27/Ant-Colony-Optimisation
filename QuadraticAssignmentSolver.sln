@@ -5,7 +5,9 @@ VisualStudioVersion = 16.0.30413.136
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuadraticAssignmentSolver", "QuadraticAssignmentSolver\QuadraticAssignmentSolver.csproj", "{D844F9F1-5B71-4AAA-8B96-FBDF95CE7B79}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuadraticAssignmentSolverTests", "QuadraticAssignmentSolverTests\QuadraticAssignmentSolverTests.csproj", "{E6770DCB-ABF0-4DDF-B93F-1E003696FCDE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuadraticAssignmentSolverTests", "QuadraticAssignmentSolverTests\QuadraticAssignmentSolverTests.csproj", "{E6770DCB-ABF0-4DDF-B93F-1E003696FCDE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuadraticAssignmentSolverExperiments", "QuadraticAssignmentSolverExperiments\QuadraticAssignmentSolverExperiments.csproj", "{8B29B50D-DDA5-4026-8C34-45DB9B9C3F39}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{E6770DCB-ABF0-4DDF-B93F-1E003696FCDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E6770DCB-ABF0-4DDF-B93F-1E003696FCDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E6770DCB-ABF0-4DDF-B93F-1E003696FCDE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B29B50D-DDA5-4026-8C34-45DB9B9C3F39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B29B50D-DDA5-4026-8C34-45DB9B9C3F39}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B29B50D-DDA5-4026-8C34-45DB9B9C3F39}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B29B50D-DDA5-4026-8C34-45DB9B9C3F39}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

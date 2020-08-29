@@ -57,7 +57,8 @@ namespace QuadraticAssignmentSolver
             Problem problem = new Problem(size);
 
             if (numbers.Length != 1 + size * size * 2)
-                throw new FormatException($"File contains {numbers.Length} values, {1 + size * size * 2} values were expected for a problem of size {size}.");
+                throw new FormatException(
+                    $"File contains {numbers.Length} values, {1 + size * size * 2} values were expected for a problem of size {size}.");
 
             CopySymmetricMatrix(problem._distances, numbers, 1, size);
             CopySymmetricMatrix(problem._flows, numbers, 1 + size * size, size);

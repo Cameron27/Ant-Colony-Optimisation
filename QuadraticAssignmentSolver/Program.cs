@@ -3,9 +3,9 @@ using QuadraticAssignmentSolver.Utils;
 
 namespace QuadraticAssignmentSolver
 {
-    internal class Program
+    public class Program
     {
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
             AntColonyOptimiser aco;
             try
