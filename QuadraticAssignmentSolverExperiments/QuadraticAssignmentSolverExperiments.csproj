@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Experimenter\Experimenter.csproj" />
     <ProjectReference Include="..\QuadraticAssignmentSolver\QuadraticAssignmentSolver.csproj" />
   </ItemGroup>
 

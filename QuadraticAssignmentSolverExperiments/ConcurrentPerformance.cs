@@ -1,17 +1,26 @@
-using System;
+using Experimenter;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace QuadraticAssignmentSolver.Experiments
 {
     [TestClass]
-    public class ConcurrentPerformance
+    public class ConcurrentPerformance : IExperiment
     {
-        [TestMethod]
-        public void Experiment()
-        {
-            (Result[] results, Stats stats) = Utils.RunExperiments(new[] {"Examples/nug20.dat"}, 20);
+        [Parameters(5, 10, 15, 20)] public int AntCount;
 
-            Console.WriteLine(stats);
+        [Parameters("Examples/nug12.dat")] public string Problem;
+
+        [Parameters(5, 10, 15, 20)] public int StopThreshold;
+
+        public double Experiment()
+        {
+            return Utils.RunExperiments($"-c {AntCount} -s {StopThreshold} {Problem}".Split(' '));
+        }
+
+        [TestMethod]
+        public void Run()
+        {
+            Experimenter.Experimenter.RunExperiment(this, 10);
         }
     }
 }
