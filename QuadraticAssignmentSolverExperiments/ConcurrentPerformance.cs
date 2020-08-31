@@ -6,11 +6,14 @@ namespace QuadraticAssignmentSolver.Experiments
     [TestClass]
     public class ConcurrentPerformance : IExperiment
     {
-        [Parameters(5, 10, 15, 20)] public int AntCount;
+        [Parameters(new object[] {"Examples/nug20.dat", "Examples/nug30.dat", "Examples/sko42.dat"}, 3)]
+        public string Problem;
 
-        [Parameters("Examples/nug12.dat")] public string Problem;
+        [Parameters(new object[] {5, 10, 15, 20}, 2)]
+        public int AntCount;
 
-        [Parameters(5, 10, 15, 20)] public int StopThreshold;
+        [Parameters(new object[] {5, 10, 15, 20}, 1)]
+        public int StopThreshold;
 
         public double Experiment()
         {
