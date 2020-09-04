@@ -18,7 +18,7 @@ namespace Experimenter
         /// <param name="iterations">The number of iterations to perform per experiment.</param>
         /// <typeparam name="T">The type of the experiment.</typeparam>
         /// <exception cref="ParameterTypeMismatchException">A parameter does not match the type of its field.</exception>
-        public static void RunExperiment<T>(T instance, int iterations) where T : IExperiment
+        public static void RunExperiment<T>(T instance, int iterations, bool useFile = true) where T : IExperiment
         {
             // Get fields with a ParametersAttribute and the parameters for each of them
             Type type = instance.GetType();
@@ -43,7 +43,7 @@ namespace Experimenter
 
             // Load results from file
             string filename = GetFileName(fieldParameters);
-            List<object[]> results = LoadResults(filename);
+            List<object[]> results = useFile ? LoadResults(filename) : new List<object[]>();
 
             int[] parameterIndices = new int[fieldParameters.Length];
             int[] fieldParameterCounts = fieldParameters.Select(fp => fp.Parameters.Length).ToArray();
@@ -113,7 +113,7 @@ namespace Experimenter
                 result[^1] = v4;
 
                 results.Add(result);
-                WriteResult(filename, result);
+                if (useFile) WriteResult(filename, result);
 
                 // Count up parameter indices
                 parameterIndices[0]++;
