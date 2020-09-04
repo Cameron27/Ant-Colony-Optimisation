@@ -18,24 +18,29 @@ namespace QuadraticAssignmentSolver
             _problem = Problem.CreateFromFile(filename);
         }
 
-        public (Solution, int) Search(int antCount, double stopThreshold)
+        public Solution Search(int antCount, double stopThreshold)
         {
             PheromoneTable pheromoneTable = new PheromoneTable(_problem);
 
-            (Solution, int) best = (null, int.MaxValue);
+            Solution best = null;
 
+            // While the stop condition has not been reached
             int iterationsNoImprovement = 0;
             while (iterationsNoImprovement < stopThreshold)
             {
-                List<(Solution, int)> results = new List<(Solution, int)>();
+                // Generate solutions with ants and local search
+                List<Solution> results = new List<Solution>();
                 for (int j = 0; j < antCount; j++) results.Add(LocalSearch(ConstructAntSolution(pheromoneTable)));
 
-                (Solution, int) oldBest = best;
+                Solution oldBest = best;
 
-                foreach ((Solution, int) result in results.Where(result => result.Item2 < best.Item2))
+                // Set new best solution
+                foreach (Solution result in results.Where(result =>
+                    best == null || result.Fitness < best.Fitness))
                     best = result;
 
-                if (oldBest.Item2 == best.Item2)
+                // Add best solution to the results if it is not already in there
+                if (oldBest != null && oldBest.Fitness == best.Fitness)
                 {
                     results.Add(best);
                     iterationsNoImprovement++;
@@ -45,13 +50,14 @@ namespace QuadraticAssignmentSolver
                     iterationsNoImprovement = 0;
                 }
 
+                // Deposit pheromones
                 pheromoneTable.DepositPheromones(results);
             }
 
             return best;
         }
 
-        private (Solution, int) ConstructAntSolution(PheromoneTable pheromoneTable)
+        private Solution ConstructAntSolution(PheromoneTable pheromoneTable)
         {
             Random rnd = new Random();
 
@@ -72,7 +78,7 @@ namespace QuadraticAssignmentSolver
 
                     solution.SetFacility(location, facility);
 
-                    double fitness = 1d / solution.EvaluatePartialFitness(location);
+                    double fitness = 1d / solution.PartialFitness(location);
                     double pheromone = pheromoneTable.GetPheromones(location, facility);
 
                     weightings[i] = Math.Pow(fitness, FitnessWeight) * Math.Pow(pheromone, PheromoneWeight);
@@ -95,14 +101,12 @@ namespace QuadraticAssignmentSolver
                 remainingFacilities.RemoveAt(index);
             }
 
-            return (solution, solution.EvaluateFitness());
+            return solution;
         }
 
-        private (Solution, int) LocalSearch((Solution, int) start)
+        private Solution LocalSearch(Solution solution)
         {
-            Solution startSolution = start.Item1;
-
-            Solution solution = startSolution.Clone();
+            solution = solution.Clone();
 
             while (true)
             {
@@ -111,23 +115,23 @@ namespace QuadraticAssignmentSolver
                 for (int locationA = 0; locationA < solution.Size; locationA++)
                 {
                     int facilityA = solution.GetFacility(locationA);
-                    int partialFitnessA = solution.EvaluatePartialFitness(locationA);
+                    int partialFitnessA = solution.PartialFitness(locationA);
 
-                    solution.SetFacility(locationA, -1);
+                    solution.SetFacility(locationA, null);
 
                     for (int locationB = locationA + 1; locationB < solution.Size; locationB++)
                     {
                         int facilityB = solution.GetFacility(locationB);
 
-                        int partialFitnessB = solution.EvaluatePartialFitness(locationB);
+                        int partialFitnessB = solution.PartialFitness(locationB);
 
                         solution.SetFacility(locationB, facilityA);
 
-                        int partialFitnessC = solution.EvaluatePartialFitness(locationB);
+                        int partialFitnessC = solution.PartialFitness(locationB);
 
                         solution.SetFacility(locationA, facilityB);
 
-                        int partialFitnessD = solution.EvaluatePartialFitness(locationA);
+                        int partialFitnessD = solution.PartialFitness(locationA);
 
                         int fitnessDiff = -partialFitnessA - partialFitnessB + partialFitnessD + partialFitnessC;
 
@@ -137,7 +141,7 @@ namespace QuadraticAssignmentSolver
                             bestSwap = (locationA, locationB);
                         }
 
-                        solution.SetFacility(locationA, -1);
+                        solution.SetFacility(locationA, null);
                         solution.SetFacility(locationB, facilityB);
                     }
 
@@ -152,23 +156,30 @@ namespace QuadraticAssignmentSolver
                 solution.SetFacility(lB, fA);
             }
 
-            return (solution, solution.EvaluateFitness());
+            return solution;
         }
 
-        public (Solution, int) SynchronousParallelSearch(int antCount, double stopThreshold, int threads)
+        public Solution SynchronousParallelSearch(int antCount, double stopThreshold, int threads)
         {
-            ConcurrentBag<(Solution, int)> results = new ConcurrentBag<(Solution, int)>();
+            ConcurrentBag<Solution> results = new ConcurrentBag<Solution>();
 
             Parallel.For(0, threads, _ =>
             {
-                (Solution, int) result = Search(antCount, stopThreshold);
+                Solution result = Search(antCount, stopThreshold);
                 results.Add(result);
             });
 
-            (Solution, int) bestResult = (null, int.MaxValue);
-            foreach ((Solution, int) result in results)
-                if (result.Item2 < bestResult.Item2)
-                    bestResult = result;
+            Solution bestResult = null;
+            int bestFitness = int.MaxValue;
+            foreach (Solution result in results)
+            {
+                int fitness = result.Fitness;
+
+                if (fitness >= bestFitness) continue;
+
+                bestResult = result;
+                bestFitness = fitness;
+            }
 
             return bestResult;
         }

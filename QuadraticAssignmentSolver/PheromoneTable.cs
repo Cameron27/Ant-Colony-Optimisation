@@ -22,7 +22,7 @@ namespace QuadraticAssignmentSolver
             return _table[locationIndex * _problem.Size + facilityIndex];
         }
 
-        public void DepositPheromones(IEnumerable<(Solution, int)> solutions)
+        public void DepositPheromones(IEnumerable<Solution> solutions)
         {
             double[] depositAmounts = CalculateDepositAmounts(solutions);
 
@@ -33,13 +33,13 @@ namespace QuadraticAssignmentSolver
                     + depositAmounts[location * _problem.Size + facility];
         }
 
-        private double[] CalculateDepositAmounts(IEnumerable<(Solution, int)> solutions)
+        private double[] CalculateDepositAmounts(IEnumerable<Solution> solutions)
         {
             double[] depositAmounts = new double[_problem.Size * _problem.Size];
 
-            foreach ((Solution solution, int score) in solutions)
+            foreach (Solution solution in solutions)
             {
-                double weight = CalculateWeight(score);
+                double weight = CalculateWeight(solution.Fitness);
 
                 for (int location = 0; location < _problem.Size; location++)
                 {

@@ -47,7 +47,7 @@ namespace QuadraticAssignmentSolver
                 return;
             }
 
-            (Solution, int) result = algorithm switch
+            Solution result = algorithm switch
             {
                 Algorithm.SingleThread => aco.Search(antCount, stopThreshold),
                 Algorithm.Synchronous => aco.SynchronousParallelSearch(antCount, stopThreshold, (int) threads),

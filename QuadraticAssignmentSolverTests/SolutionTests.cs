@@ -11,7 +11,7 @@ namespace QuadraticAssignmentSolver.Tests
             Problem p = Problem.CreateFromFile("Examples/nug12.dat");
             (Solution s, int fitness) = Solution.CreateFromFile("Examples/nug12.sol", p);
 
-            Assert.AreEqual(s.EvaluateFitness(), fitness);
+            Assert.AreEqual(s.Fitness, fitness);
         }
     }
 }

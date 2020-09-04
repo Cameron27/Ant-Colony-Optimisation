@@ -11,7 +11,7 @@ namespace QuadraticAssignmentSolver.Tests
         {
             AntColonyOptimiser aco = new AntColonyOptimiser("Examples/nug12.dat");
 
-            (Solution, int) result = aco.Search(5, 20);
+            Solution result = aco.Search(5, 20);
 
             result.DisplayResult();
         }
@@ -21,7 +21,7 @@ namespace QuadraticAssignmentSolver.Tests
         {
             AntColonyOptimiser aco = new AntColonyOptimiser("Examples/nug12.dat");
 
-            (Solution, int) result = aco.SynchronousParallelSearch(5, 20, Environment.ProcessorCount);
+            Solution result = aco.SynchronousParallelSearch(5, 20, Environment.ProcessorCount);
 
             result.DisplayResult();
         }

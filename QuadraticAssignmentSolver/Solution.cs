@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace QuadraticAssignmentSolver
 {
@@ -8,6 +9,7 @@ namespace QuadraticAssignmentSolver
     {
         private readonly Problem _problem;
         private int[] _facilitiesAtLocations;
+        private int? _fitness;
 
         public Solution(Problem problem)
         {
@@ -18,55 +20,80 @@ namespace QuadraticAssignmentSolver
 
         public int Size => _problem.Size;
 
-        public void SetFacility(int locationIndex, int facilityIndex)
+        public int Fitness
         {
-            if (facilityIndex >= _problem.Size)
-                throw new IndexOutOfRangeException(
-                    $"The facility index, {facilityIndex}, is larger than the size of the problem, {_problem.Size}.");
-            if (locationIndex >= _problem.Size)
-                throw new IndexOutOfRangeException(
-                    $"The location index, {locationIndex}, is larger than the size of the problem, {_problem.Size}.");
+            get
+            {
+                // If fitness is known, return it
+                if (_fitness.HasValue) return _fitness.Value;
 
-            _facilitiesAtLocations[locationIndex] = facilityIndex;
+                // Calculate fitness
+                int fitness = 0;
+                // For each location
+                for (int locationB = 0; locationB < _problem.Size; locationB++)
+                {
+                    int facilityB = _facilitiesAtLocations[locationB];
+
+                    if (facilityB == -1) continue;
+
+                    // For each location of a higher number
+                    for (int locationA = locationB + 1; locationA < _problem.Size; locationA++)
+                    {
+                        int facilityA = _facilitiesAtLocations[locationA];
+
+                        if (facilityA == -1) continue;
+
+                        // Add (flow * distance) to fitness 
+                        fitness += _problem.GetFlow(facilityA, facilityB) * _problem.GetDistance(locationA, locationB);
+                    }
+                }
+
+                // Double fitness for symmetry
+                _fitness = fitness * 2;
+
+                return _fitness.Value;
+            }
+        }
+
+        public void SetFacility(int locationIndex, int? facilityIndex)
+        {
+#if DEBUG
+            // Check validity
+            if (facilityIndex >= _problem.Size || facilityIndex < 0)
+                throw new IndexOutOfRangeException(
+                    $"The facility index, {facilityIndex}, is outside of the range of 0 to {_problem.Size - 1}.");
+            if (locationIndex >= _problem.Size || locationIndex < 0)
+                throw new IndexOutOfRangeException(
+                    $"The location index, {locationIndex}, is outside of the range of 0 to {_problem.Size - 1}.");
+#endif
+
+            _facilitiesAtLocations[locationIndex] = facilityIndex ?? -1;
+
+            // Set fitness to unknown
+            _fitness = null;
         }
 
         public int GetFacility(int locationIndex)
         {
+#if DEBUG
+            // Check validity
             if (locationIndex >= _problem.Size)
                 throw new IndexOutOfRangeException(
                     $"The location index, {locationIndex}, is larger than the size of the problem, {_problem.Size}.");
+#endif
 
-            return _facilitiesAtLocations[locationIndex];
+            int result = _facilitiesAtLocations[locationIndex];
+            if (result == -1) throw new NullReferenceException("Location does not have a facility assigned to it.");
+            return result;
         }
 
-        public int EvaluateFitness()
-        {
-            int fitness = 0;
-            for (int locationB = 0; locationB < _problem.Size; locationB++)
-            {
-                int facilityB = _facilitiesAtLocations[locationB];
-
-                if (facilityB == -1) continue;
-
-                for (int locationA = locationB + 1; locationA < _problem.Size; locationA++)
-                {
-                    int facilityA = _facilitiesAtLocations[locationA];
-
-                    if (facilityA == -1) continue;
-
-                    fitness += _problem.GetFlow(facilityA, facilityB) * _problem.GetDistance(locationA, locationB);
-                }
-            }
-
-            return fitness * 2;
-        }
-
-        public int EvaluatePartialFitness(int location)
+        public int PartialFitness(int location)
         {
             int partialFitness = 0;
 
             int facilityA = _facilitiesAtLocations[location];
 
+            // For every location
             for (int locationB = 0; locationB < _problem.Size; locationB++)
             {
                 if (location == locationB) continue;
@@ -75,18 +102,20 @@ namespace QuadraticAssignmentSolver
 
                 if (facilityB == -1) continue;
 
+                // Add (flow * distance) to partial fitness
                 partialFitness += _problem.GetFlow(facilityA, facilityB) * _problem.GetDistance(location, locationB);
             }
 
+            // Double for symmetry
             return partialFitness * 2;
         }
 
         public static (Solution, int) CreateFromFile(string filename, Problem problem)
         {
-            int[] numbers = File.ReadAllLines(filename)
-                .SelectMany(line => line.Split(' '))
-                .Where(s => s.Length != 0)
-                .Select(s =>
+            int[] numbers = File.ReadAllLines(filename) //For each line
+                .SelectMany(line => line.Split(' ')) // Split by space and flatten
+                .Where(s => s.Length != 0) // Remove empty strings
+                .Select(s => // Convert to ints
                 {
                     if (int.TryParse(s, out int i)) return i;
 
@@ -94,12 +123,31 @@ namespace QuadraticAssignmentSolver
                 })
                 .ToArray();
 
+            // Get known fitness
             int knownFitness = numbers[1];
-            Solution solution = new Solution(problem);
 
+            // Create solution
+            Solution solution = new Solution(problem);
             for (int i = 0; i < problem.Size; i++) solution.SetFacility(i, numbers[i + 2] - 1);
 
             return (solution, knownFitness);
+        }
+
+        public void DisplayResult()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append("Problem Size: ").AppendLine(Size.ToString());
+            sb.Append("Solution fitness: ").AppendLine(Fitness.ToString());
+
+            sb.Append("Solution: ");
+            for (int i = 0; i < Size; i++)
+            {
+                sb.Append(GetFacility(i) + 1);
+                if (i != Size - 1) sb.Append(" ");
+            }
+
+            Console.WriteLine(sb.ToString());
         }
 
         public Solution Clone()
