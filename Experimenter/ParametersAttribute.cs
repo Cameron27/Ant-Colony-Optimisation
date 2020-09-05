@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Experimenter
 {
@@ -7,17 +6,17 @@ namespace Experimenter
     public class ParametersAttribute : Attribute
     {
         /// <summary>
-        /// An array of parameters associated with the field.
+        ///     An array of parameters associated with the field.
         /// </summary>
         public readonly object[] Parameters;
-        
+
         /// <summary>
-        /// The priority of the field.
+        ///     The priority of the field.
         /// </summary>
         public readonly int Priority;
 
         /// <summary>
-        /// Initialise a new instance of <code>ParametersAttribute</code> with no parameters and priority 0.
+        ///     Initialise a new instance of the <code>ParametersAttribute</code> class with no parameters and priority 0.
         /// </summary>
         public ParametersAttribute()
         {
@@ -25,7 +24,7 @@ namespace Experimenter
         }
 
         /// <summary>
-        /// Initialise a new instance of <code>ParametersAttribute</code> with the given parameters and priority.
+        ///     Initialise a new instance of the <code>ParametersAttribute</code> class with the given parameters and priority.
         /// </summary>
         /// <param name="parameters">The array of parameters for the field.</param>
         /// <param name="priority">The priority of the field.</param>
