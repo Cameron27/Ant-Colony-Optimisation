@@ -36,8 +36,15 @@ namespace Experimenter
                 }).OrderBy(field =>
                 {
                     ParametersAttribute parametersAttribute = field.GetCustomAttribute<ParametersAttribute>();
-                    return new Tuple<int, string>(parametersAttribute.Priority, field.Name);
-                })
+                    return (parametersAttribute.Priority, field.Name);
+                }, Comparer<(int, string)>.Create((x, y) =>
+                {
+                    (int xInt, string xString) = x;
+                    (int yInt, string yString) = y;
+                    return xInt != yInt
+                        ? xInt.CompareTo(yInt)
+                        : string.Compare(yString, xString, StringComparison.Ordinal);
+                }))
                 .Select(field => (field, field.GetCustomAttribute<ParametersAttribute>().Parameters))
                 .ToArray();
 
