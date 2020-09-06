@@ -17,36 +17,13 @@ namespace Experimenter
         /// <param name="instance">An object to use to perform experiments.</param>
         /// <param name="iterations">The number of iterations to perform per experiment.</param>
         /// <typeparam name="T">The type of the experiment.</typeparam>
-        /// <exception cref="ParameterTypeMismatchException">A parameter does not match the type of its field.</exception>
+        /// <exception cref="ParameterTypeMismatchException">
+        ///     A parameter does not match the type of its field.
+        /// </exception>
         public static void RunExperiment<T>(T instance, int iterations, bool useFile = true) where T : IExperiment
         {
             // Get fields with a ParametersAttribute and the parameters for each of them
-            Type type = instance.GetType();
-            (FieldInfo Field, object[] Parameters)[] fieldParameters = type.GetFields()
-                .Where(field =>
-                {
-                    ParametersAttribute parametersAttribute = field.GetCustomAttribute<ParametersAttribute>();
-                    if (parametersAttribute == null || parametersAttribute.Parameters.Length == 0) return false;
-
-                    if (parametersAttribute.Parameters.Any(p => p.GetType() != field.FieldType))
-                        throw new ParameterTypeMismatchException(
-                            $"The field {field.Name} as a parameter of the wrong type.");
-
-                    return true;
-                }).OrderBy(field =>
-                {
-                    ParametersAttribute parametersAttribute = field.GetCustomAttribute<ParametersAttribute>();
-                    return (parametersAttribute.Priority, field.Name);
-                }, Comparer<(int, string)>.Create((x, y) =>
-                {
-                    (int xInt, string xString) = x;
-                    (int yInt, string yString) = y;
-                    return xInt != yInt
-                        ? xInt.CompareTo(yInt)
-                        : string.Compare(yString, xString, StringComparison.Ordinal);
-                }))
-                .Select(field => (field, field.GetCustomAttribute<ParametersAttribute>().Parameters))
-                .ToArray();
+            (FieldInfo Field, object[] Parameters)[] fieldParameters = GetFieldParameters(instance.GetType());
 
             // Load results from file
             string filename = GetFileName(fieldParameters);
@@ -139,12 +116,103 @@ namespace Experimenter
             Console.WriteLine(table.ToString());
         }
 
+        public static void RunOptimisation<T>(T instance, int iterations, int optimisationIterations,
+            bool useFile = true) where T : IExperiment
+        {
+            Random rnd = new Random();
+
+            // Get fields with a ParametersAttribute and the parameters for each of them
+            (FieldInfo Field, object[] Parameters)[] fieldParameters = GetFieldParameters(instance.GetType());
+
+            foreach ((FieldInfo field, object[] parameters) in fieldParameters)
+                field.SetValue(instance, parameters[parameters.Length / 2]);
+
+            // For number of iterations
+            for (int i = 0; i < optimisationIterations; i++)
+            {
+                fieldParameters = fieldParameters.OrderBy(_ => rnd.Next()).ToArray();
+
+                // For each field
+                foreach ((FieldInfo field, object[] parameters) in fieldParameters)
+                {
+                    // For each parameter get the average score with that parameter set
+                    List<double> scores = new List<double>();
+                    foreach (object parameter in parameters)
+                    {
+                        field.SetValue(instance, parameter);
+
+                        List<double> subScores = new List<double>();
+                        for (int j = 0; j < iterations; j++) subScores.Add(instance.Experiment());
+                        scores.Add(CalculateStats(subScores).Average);
+                    }
+
+                    // Find best score
+                    int bestIndex = 0;
+                    double bestScore = scores[0];
+                    for (int index = 0; index < scores.Count; index++)
+                    {
+                        double score = scores[index];
+                        if (!(score < bestScore)) continue;
+                        bestScore = score;
+                        bestIndex = index;
+                    }
+
+                    // Set field to parameter that gave the best score
+                    field.SetValue(instance, parameters[bestIndex]);
+
+                    Console.WriteLine($"Optimising {field.Name} gave a best score of {scores[bestIndex]} for the " +
+                                      $"parameter {parameters[bestIndex]}");
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Get all the fields with a <code>ParametersAttribute</code> and the parameters for those fields.
+        /// </summary>
+        /// <param name="type">The type to get the fields and parameters from.</param>
+        /// <returns>An array to tuples containing pairs of field and parameters for that field</returns>
+        /// <exception cref="ParameterTypeMismatchException">
+        ///     A parameter has a type that does not match the type of the field.
+        /// </exception>
+        private static (FieldInfo Field, object[] Parameters)[] GetFieldParameters(Type type)
+        {
+            (FieldInfo Field, object[] Parameters)[] fieldParameters = type.GetFields()
+                .Where(field => // Restrict to only fields with ParametersAttribute
+                {
+                    ParametersAttribute parametersAttribute = field.GetCustomAttribute<ParametersAttribute>();
+                    if (parametersAttribute == null || parametersAttribute.Parameters.Length == 0) return false;
+
+                    // Check all parameters are of the correct type
+                    if (parametersAttribute.Parameters.Any(p =>
+                        p.GetType() != field.FieldType || p.GetType().IsSubclassOf(field.GetType())))
+                        throw new ParameterTypeMismatchException(
+                            $"The field {field.Name} as a parameter of the wrong type.");
+
+                    return true;
+                }).OrderBy(field =>
+                {
+                    ParametersAttribute parametersAttribute = field.GetCustomAttribute<ParametersAttribute>();
+                    return (parametersAttribute.Priority, field.Name);
+                }, Comparer<(int, string)>.Create((x, y) =>
+                {
+                    (int xInt, string xString) = x;
+                    (int yInt, string yString) = y;
+                    return xInt != yInt
+                        ? xInt.CompareTo(yInt)
+                        : string.Compare(yString, xString, StringComparison.Ordinal);
+                }))
+                .Select(field => (field, field.GetCustomAttribute<ParametersAttribute>().Parameters))
+                .ToArray();
+            return fieldParameters;
+        }
+
         /// <summary>
         ///     Calculate the average, min, max and standard deviation of an array of values.
         /// </summary>
         /// <param name="values">The array of values to calculate the stats with.</param>
         /// <returns>A tuple containing the average, min, max and standard deviation of the values.</returns>
-        private static (double, double, double, double) CalculateStats(IReadOnlyCollection<double> values)
+        private static (double Average, double Min, double Max, double SD) CalculateStats(
+            IReadOnlyCollection<double> values)
         {
             double min = values.Min(l => l);
             double max = values.Max(l => l);
