@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace QuadraticAssignmentSolver.Experiments
+namespace QuadraticAssignmentSolver.Optimisation
 {
     public static class Utils
     {
@@ -14,7 +14,6 @@ namespace QuadraticAssignmentSolver.Experiments
             Console.SetOut(tw);
 
             Program.Main(args);
-            string s = sb.ToString();
             int fitness = int.Parse(sb.ToString().Split(Environment.NewLine)[1].Split(' ')[2]);
 
             sb.Clear();
