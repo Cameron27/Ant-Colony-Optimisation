@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,12 +11,12 @@ namespace QuadraticAssignmentSolver
         /// <summary>
         ///     Exponent for contribution of fitness.
         /// </summary>
-        public static double FitnessWeight = 1;
+        public static double FitnessWeight = 3;
 
         /// <summary>
         ///     Exponent for contribution of pheromone.
         /// </summary>
-        public static double PheromoneWeight = 1;
+        public static double PheromoneWeight = 2;
 
         /// <summary>
         ///     Problem being solved.

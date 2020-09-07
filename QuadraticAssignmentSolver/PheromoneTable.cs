@@ -5,8 +5,8 @@ namespace QuadraticAssignmentSolver
 {
     public class PheromoneTable
     {
-        public static double InitialValue = 0.01;
-        public static double EvaporationRate = 0.9;
+        public static double InitialValue = 0.5;
+        public static double EvaporationRate = 0.5;
         private readonly Problem _problem;
 
         private readonly double[] _table;
