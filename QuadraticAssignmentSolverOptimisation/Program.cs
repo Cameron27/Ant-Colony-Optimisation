@@ -9,7 +9,7 @@ namespace QuadraticAssignmentSolverOptimisation
         {
             if (args.Length == 0)
             {
-                Console.WriteLine("No argument provided.");
+                Console.Error.WriteLine("No argument provided.");
                 return;
             }
 
@@ -18,8 +18,11 @@ namespace QuadraticAssignmentSolverOptimisation
                 case "concurrent":
                     new ConcurrentOptimisation().Run();
                     break;
+                case "synchronous":
+                    new SynchronousParallelOptimisation().Run();
+                    break;
                 default:
-                    Console.WriteLine("Argument is invalid.");
+                    Console.Error.WriteLine("Argument is invalid.");
                     break;
             }
         }

@@ -2,7 +2,7 @@ using Experimenter;
 
 namespace QuadraticAssignmentSolver.Optimisation
 {
-    public class ConcurrentOptimisation : Experiment
+    public class SynchronousParallelOptimisation : Experiment
     {
         public string A_Problem = "Examples/nug30.dat";
         public int B_AntCount = 20;
@@ -27,7 +27,7 @@ namespace QuadraticAssignmentSolver.Optimisation
             PheromoneTable.InitialValue = F_InitialValue;
             PheromoneTable.EvaporationRate = G_EvaporationRate;
             return Utils.RunExperiments(
-                $"-c {B_AntCount.ToString()} -s {C_StopThreshold.ToString()} {A_Problem}".Split(' '));
+                $"-a Synchronous -t 4 -c {B_AntCount.ToString()} -s {C_StopThreshold.ToString()} {A_Problem}".Split(' '));
         }
 
         public void Run()
