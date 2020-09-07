@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -20,7 +21,7 @@ namespace Experimenter
         /// <exception cref="ParameterTypeMismatchException">
         ///     A parameter does not match the type of its field.
         /// </exception>
-        public static void RunExperiment<T>(T instance, int iterations, bool useFile = true) where T : IExperiment
+        public static void RunExperiment<T>(T instance, int iterations, bool useFile = true) where T : Experiment
         {
             // Get fields with a ParametersAttribute and the parameters for each of them
             (FieldInfo Field, object[] Parameters)[] fieldParameters = GetFieldParameters(instance.GetType());
@@ -79,7 +80,7 @@ namespace Experimenter
                 for (int i = 0; i < iterations; i++)
                 {
                     long startTime = Stopwatch.GetTimestamp() / TimeSpan.TicksPerMillisecond;
-                    scores[i] = instance.Experiment();
+                    scores[i] = instance.RunExperiment();
                     times[i] = Stopwatch.GetTimestamp() / TimeSpan.TicksPerMillisecond - startTime;
                 }
 
@@ -116,8 +117,8 @@ namespace Experimenter
             Console.WriteLine(table.ToString());
         }
 
-        public static void RunOptimisation<T>(T instance, int iterations, int optimisationIterations,
-            bool useFile = true) where T : IExperiment
+        public static void RunOptimisation<T>(T instance, int iterations, int optimisationIterations)
+            where T : Experiment
         {
             Random rnd = new Random();
 
@@ -125,7 +126,8 @@ namespace Experimenter
             (FieldInfo Field, object[] Parameters)[] fieldParameters = GetFieldParameters(instance.GetType());
 
             foreach ((FieldInfo field, object[] parameters) in fieldParameters)
-                field.SetValue(instance, parameters[parameters.Length / 2]);
+                if (!parameters.Contains(field.GetValue(instance)))
+                    field.SetValue(instance, parameters[parameters.Length / 2]);
 
             // For number of iterations
             for (int i = 0; i < optimisationIterations; i++)
@@ -141,9 +143,7 @@ namespace Experimenter
                     {
                         field.SetValue(instance, parameter);
 
-                        List<double> subScores = new List<double>();
-                        for (int j = 0; j < iterations; j++) subScores.Add(instance.Experiment());
-                        scores.Add(CalculateStats(subScores).Average);
+                        scores.Add(CalculateScore(instance, iterations, fieldParameters));
                     }
 
                     // Find best score
@@ -159,13 +159,45 @@ namespace Experimenter
 
                     // Set field to parameter that gave the best score
                     field.SetValue(instance, parameters[bestIndex]);
-
-                    Console.WriteLine($"Optimising {field.Name} gave a best score of {scores[bestIndex]} for the " +
-                                      $"parameter {parameters[bestIndex]}");
+                    
+                    Console.WriteLine(
+                        $"Optimising {field.Name} gave a best score of {scores[bestIndex].ToString(CultureInfo.CurrentCulture)} for the parameter {parameters[bestIndex]}");
                 }
+
+                Console.WriteLine($"After {i + 1} iterations the configuration is:");
+                foreach ((FieldInfo field, object[] _) in fieldParameters)
+                    Console.WriteLine($"\t{field.Name}: {field.GetValue(instance)}");
+            }
+
+            static double CalculateScore(T instance, int iterations, (FieldInfo Field, object[] Parameters)[] fieldParameters)
+            {
+                List<object> key = fieldParameters.Select(tuple => tuple.Field)
+                    .OrderBy(field => field.Name)
+                    .Select(field => field.GetValue(instance))
+                    .ToListKey();
+
+                if (instance.ScoresDictionary.ContainsKey(key)) return instance.ScoresDictionary[key];
+
+                // Perform a number of runs based on the number of iterations and store the results
+                List<double> scores = new List<double>();
+                for (int i = 0; i < iterations; i++)
+                {
+                    // Run GC to increase consistency
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    GC.Collect();
+
+                    scores.Add(instance.RunExperiment());
+                }
+
+                double score = CalculateStats(scores).Average;
+                instance.ScoresDictionary[key] = score;
+                
+                // Return average
+                return score;
             }
         }
-
+        
         /// <summary>
         ///     Get all the fields with a <code>ParametersAttribute</code> and the parameters for those fields.
         /// </summary>

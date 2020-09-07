@@ -1,7 +1,16 @@
-﻿namespace Experimenter
+﻿using System.Collections.Generic;
+
+namespace Experimenter
 {
-    public interface IExperiment
+    public abstract class Experiment
     {
-        double Experiment();
+        protected Experiment()
+        {
+            ScoresDictionary = new Dictionary<List<object>, double>();
+        }
+
+        internal Dictionary<List<object>, double> ScoresDictionary { get; }
+
+        public abstract double RunExperiment();
     }
 }

@@ -225,7 +225,7 @@ namespace QuadraticAssignmentSolver
         {
             // Spawn a thread for each search and save result
             ConcurrentBag<Solution> results = new ConcurrentBag<Solution>();
-            Parallel.For(0, threads, new ParallelOptions {MaxDegreeOfParallelism = threads},
+            Parallel.For(0, threads, new ParallelOptions {MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, threads)},
                 _ =>
                 {
                     Solution result = Search(antCount, stopThreshold);
