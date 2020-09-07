@@ -9,22 +9,22 @@ namespace QuadraticAssignmentSolver
     public class AntColonyOptimiser
     {
         /// <summary>
-        ///     Exponent for contribution of fitness.
+        ///     The exponent for contribution of fitness.
         /// </summary>
         public static double FitnessWeight = 3;
 
         /// <summary>
-        ///     Exponent for contribution of pheromone.
+        ///     The exponent for contribution of pheromone.
         /// </summary>
         public static double PheromoneWeight = 2;
 
         /// <summary>
-        ///     Random object to be used when a source of randomness is needed.
+        ///     A random object to be used when a source of randomness is needed.
         /// </summary>
         [ThreadStatic] private static Random _rnd;
 
         /// <summary>
-        ///     Problem being solved.
+        ///     The problem being solved.
         /// </summary>
         private readonly Problem _problem;
 
