@@ -4,7 +4,7 @@ namespace QuadraticAssignmentSolver.Optimisation
 {
     public class ConcurrentOptimisation : Experiment
     {
-        public string A_Problem = "Examples/nug30.dat";
+        public string A_Problem = "Examples/sko42.dat";
         public int B_AntCount = 20;
         public int C_StopThreshold = 20;
 
@@ -14,7 +14,7 @@ namespace QuadraticAssignmentSolver.Optimisation
         [Parameters(new object[] {1d, 2d, 3d, 4d, 5d})]
         public double E_PheromoneWeight;
 
-        [Parameters(new object[] {1d, 0.5d, 0.1d, 0.05d, 0.01d})]
+        [Parameters(new object[] {5d, 1d, 0.5d, 0.1d, 0.05d, 0.01d})]
         public double F_InitialValue;
 
         [Parameters(new object[] {0.9d, 0.8d, 0.7d, 0.6d, 0.5d, 0.4d, 0.3d})]
@@ -32,7 +32,7 @@ namespace QuadraticAssignmentSolver.Optimisation
 
         public void Run()
         {
-            Experimenter.Experimenter.RunOptimisation(this, 30, 3);
+            Experimenter.Experimenter.RunOptimisation(this, 30, 5);
         }
         
     }

@@ -79,6 +79,11 @@ namespace Experimenter
                 long[] times = new long[iterations];
                 for (int i = 0; i < iterations; i++)
                 {
+                    // Run GC to increase consistency
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    GC.Collect();
+
                     long startTime = Stopwatch.GetTimestamp() / TimeSpan.TicksPerMillisecond;
                     scores[i] = instance.RunExperiment();
                     times[i] = Stopwatch.GetTimestamp() / TimeSpan.TicksPerMillisecond - startTime;
@@ -132,10 +137,8 @@ namespace Experimenter
             // For number of iterations
             for (int i = 0; i < optimisationIterations; i++)
             {
-                fieldParameters = fieldParameters.OrderBy(_ => rnd.Next()).ToArray();
-
                 // For each field
-                foreach ((FieldInfo field, object[] parameters) in fieldParameters)
+                foreach ((FieldInfo field, object[] parameters) in fieldParameters.OrderBy(_ => rnd.Next()))
                 {
                     // For each parameter get the average score with that parameter set
                     List<double> scores = new List<double>();
@@ -159,7 +162,7 @@ namespace Experimenter
 
                     // Set field to parameter that gave the best score
                     field.SetValue(instance, parameters[bestIndex]);
-                    
+
                     Console.WriteLine(
                         $"Optimising {field.Name} gave a best score of {scores[bestIndex].ToString(CultureInfo.CurrentCulture)} for the parameter {parameters[bestIndex]}");
                 }
@@ -169,35 +172,30 @@ namespace Experimenter
                     Console.WriteLine($"\t{field.Name}: {field.GetValue(instance)}");
             }
 
-            static double CalculateScore(T instance, int iterations, (FieldInfo Field, object[] Parameters)[] fieldParameters)
+            // Calculates the score by running a number of iterations with the current configuration or by looking up
+            // the result of a previous run with the same configuration
+            static double CalculateScore(T instance, int iterations,
+                IEnumerable<(FieldInfo Field, object[] Parameters)> fieldParameters)
             {
                 List<object> key = fieldParameters.Select(tuple => tuple.Field)
-                    .OrderBy(field => field.Name)
                     .Select(field => field.GetValue(instance))
                     .ToListKey();
 
-                if (instance.ScoresDictionary.ContainsKey(key)) return instance.ScoresDictionary[key];
+                if (instance.ScoresDictionary.ContainsKey(key))
+                    return instance.ScoresDictionary[key];
 
                 // Perform a number of runs based on the number of iterations and store the results
                 List<double> scores = new List<double>();
-                for (int i = 0; i < iterations; i++)
-                {
-                    // Run GC to increase consistency
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
-                    GC.Collect();
-
-                    scores.Add(instance.RunExperiment());
-                }
+                for (int i = 0; i < iterations; i++) scores.Add(instance.RunExperiment());
 
                 double score = CalculateStats(scores).Average;
                 instance.ScoresDictionary[key] = score;
-                
+
                 // Return average
                 return score;
             }
         }
-        
+
         /// <summary>
         ///     Get all the fields with a <code>ParametersAttribute</code> and the parameters for those fields.
         /// </summary>
@@ -225,14 +223,7 @@ namespace Experimenter
                 {
                     ParametersAttribute parametersAttribute = field.GetCustomAttribute<ParametersAttribute>();
                     return (parametersAttribute.Priority, field.Name);
-                }, Comparer<(int, string)>.Create((x, y) =>
-                {
-                    (int xInt, string xString) = x;
-                    (int yInt, string yString) = y;
-                    return xInt != yInt
-                        ? xInt.CompareTo(yInt)
-                        : string.Compare(yString, xString, StringComparison.Ordinal);
-                }))
+                })
                 .Select(field => (field, field.GetCustomAttribute<ParametersAttribute>().Parameters))
                 .ToArray();
             return fieldParameters;
