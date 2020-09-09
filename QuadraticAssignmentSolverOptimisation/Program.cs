@@ -21,6 +21,9 @@ namespace QuadraticAssignmentSolverOptimisation
                 case "synchronous":
                     new SynchronousParallelOptimisation().Run();
                     break;
+                case "count_threshold":
+                    new CountThresholdOptimisation().Run();
+                    break;
                 default:
                     Console.Error.WriteLine("Argument is invalid.");
                     break;

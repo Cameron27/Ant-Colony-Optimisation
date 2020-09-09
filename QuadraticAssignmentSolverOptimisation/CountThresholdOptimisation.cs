@@ -1,24 +1,26 @@
-using Experimenter;
+﻿using Experimenter;
+using QuadraticAssignmentSolver;
+using QuadraticAssignmentSolver.Optimisation;
 
-namespace QuadraticAssignmentSolver.Optimisation
+namespace QuadraticAssignmentSolverOptimisation
 {
-    public class ConcurrentOptimisation : Experiment
+    public class CountThresholdOptimisation : Experiment
     {
         public string A_Problem = "Examples/sko42.dat";
+
+        [Parameters(new object[] {5, 10, 15, 20, 25})]
         public int B_AntCount = 20;
+
+        [Parameters(new object[] {5, 10, 15, 20, 25})]
         public int C_StopThreshold = 20;
 
-        [Parameters(new object[] {1d, 2d, 3d, 4d, 5d})]
-        public double D_FitnessWeight;
+        public double D_FitnessWeight = 4;
 
-        [Parameters(new object[] {1d, 2d, 3d, 4d, 5d})]
-        public double E_PheromoneWeight;
+        public double E_PheromoneWeight = 3;
 
-        [Parameters(new object[] {5d, 1d, 0.5d, 0.1d, 0.05d, 0.01d})]
-        public double F_InitialValue;
+        public double F_InitialValue = 0.05;
 
-        [Parameters(new object[] {0.9d, 0.8d, 0.7d, 0.6d, 0.5d, 0.4d, 0.3d})]
-        public double G_EvaporationRate;
+        public double G_EvaporationRate = 0.7;
 
         public override double RunExperiment()
         {
@@ -32,7 +34,7 @@ namespace QuadraticAssignmentSolver.Optimisation
 
         public void Run()
         {
-            Experimenter.Experimenter.RunOptimisation(this, 30, 5);
+            Experimenter.Experimenter.RunExperiment(this, 30);
         }
     }
 }
