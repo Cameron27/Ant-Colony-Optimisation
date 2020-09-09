@@ -55,19 +55,19 @@ namespace QuadraticAssignmentSolver
             }
         }
 
-        public void SetFacility(int locationIndex, int? facilityIndex)
+        public void SetFacility(int locationIndex, int facilityIndex)
         {
 #if DEBUG
             // Check validity
-            if (facilityIndex >= _problem.Size || facilityIndex < 0)
+            if (facilityIndex >= _problem.Size || facilityIndex < -1)
                 throw new IndexOutOfRangeException(
-                    $"The facility index, {facilityIndex}, is outside of the range of 0 to {_problem.Size - 1}.");
+                    $"The facility index, {facilityIndex}, is outside of the range of -1 to {_problem.Size - 1}.");
             if (locationIndex >= _problem.Size || locationIndex < 0)
                 throw new IndexOutOfRangeException(
                     $"The location index, {locationIndex}, is outside of the range of 0 to {_problem.Size - 1}.");
 #endif
 
-            _facilitiesAtLocations[locationIndex] = facilityIndex ?? -1;
+            _facilitiesAtLocations[locationIndex] = facilityIndex;
 
             // Set fitness to unknown
             _fitness = null;
@@ -108,6 +108,13 @@ namespace QuadraticAssignmentSolver
 
             // Double for symmetry
             return partialFitness * 2;
+        }
+        
+        public int PartialFitness(in int locationA, in int locationB)
+        {
+            int facilityA = _facilitiesAtLocations[locationA];
+            int facilityB = _facilitiesAtLocations[locationB];
+            return _problem.GetFlow(facilityA, facilityB) * _problem.GetDistance(locationA, locationB) * 2;
         }
 
         public static (Solution, int) CreateFromFile(string filename, Problem problem)

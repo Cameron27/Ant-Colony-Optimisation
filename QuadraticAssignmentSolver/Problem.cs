@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -7,37 +6,57 @@ namespace QuadraticAssignmentSolver
 {
     public class Problem
     {
+        /// <summary>
+        ///     The array of distances between locations.
+        /// </summary>
         private readonly int[] _distances;
+
+        /// <summary>
+        ///     The array of flows between facilities.
+        /// </summary>
         private readonly int[] _flows;
 
         private Problem(int size)
         {
             Size = size;
-            int matrixSize = (size * size - size) / 2;
+            int matrixSize = size * size;
             _distances = new int[matrixSize];
             _flows = new int[matrixSize];
         }
 
+        /// <summary>
+        ///     The number of facilities/locations in the problem.
+        /// </summary>
         public int Size { get; }
 
+        /// <summary>
+        ///     Get the distance between two locations.
+        /// </summary>
+        /// <param name="a">The first location.</param>
+        /// <param name="b">The second location.</param>
+        /// <returns>The distance between the two locations.</returns>
         public int GetDistance(int a, int b)
         {
-            if (a == b) return 0;
-            if (a < b) (a, b) = (b, a);
-
-            int i = (int) (b * Size + a - (b + 2) * ((b + 1) / 2F));
-            return _distances[i];
+            return _distances[b * Size + a];
         }
 
+        /// <summary>
+        ///     Get the flow between two facilities.
+        /// </summary>
+        /// <param name="a">The first facility.</param>
+        /// <param name="b">The second facility.</param>
+        /// <returns>The distance between the two facilities.</returns>
         public int GetFlow(int a, int b)
         {
-            if (a == b) return 0;
-            if (a < b) (a, b) = (b, a);
-
-            int i = (int) (b * Size + a - (b + 2) * ((b + 1) / 2F));
-            return _flows[i];
+            return _flows[b * Size + a];
         }
 
+        /// <summary>
+        ///     Load a problem from a file.
+        /// </summary>
+        /// <param name="filename">The file name to load the problem from.</param>
+        /// <returns>The problems loaded from the file.</returns>
+        /// <exception cref="FormatException">The format of the file is not a valid problem.</exception>
         public static Problem CreateFromFile(string filename)
         {
             int[] numbers = File.ReadAllLines(filename)
@@ -60,28 +79,12 @@ namespace QuadraticAssignmentSolver
                 throw new FormatException(
                     $"File contains {numbers.Length} values, {1 + size * size * 2} values were expected for a problem of size {size}.");
 
-            CopySymmetricMatrix(problem._distances, numbers, 1, size);
-            CopySymmetricMatrix(problem._flows, numbers, 1 + size * size, size);
+            Array.Copy(numbers, 1, problem._distances, 0,
+                size * size);
+            Array.Copy(numbers, 1 + size * size, problem._flows, 0,
+                size * size);
 
             return problem;
-        }
-
-        private static void CopySymmetricMatrix(IList<int> destination, IReadOnlyList<int> source, int sourceOffset,
-            int size)
-        {
-            int index = 0;
-            int sizeSquared = size * size;
-            for (int i = 0; i < sizeSquared; i++)
-            {
-                int x = i % size;
-                int y = i / size;
-
-                if (y >= x) continue;
-
-                destination[index] = source[i + sourceOffset];
-
-                index++;
-            }
         }
     }
 }

@@ -146,13 +146,18 @@ namespace QuadraticAssignmentSolver
         /// </summary>
         /// <param name="solution">The solution to perform the local search on.</param>
         /// <returns>The solution found by local search.</returns>
-        private Solution LocalSearch(Solution solution)
+        private static Solution LocalSearch(Solution solution)
         {
             solution = solution.Clone();
 
             // Iterate local search
             while (true)
             {
+                // Calculate all partial fitnesses
+                int[] partialFitnesses = Enumerable.Range(0, solution.Size)
+                    .Select(i => solution.PartialFitness(i))
+                    .ToArray();
+
                 // Want to find best facility swap to minimise fitness
                 int bestFitnessDiff = int.MaxValue;
                 (int LocationA, int LocationB) bestSwap = (0, 0);
@@ -163,10 +168,7 @@ namespace QuadraticAssignmentSolver
                     int facilityA = solution.GetFacility(locationA);
 
                     // Get partial fitness for that facility
-                    int partialFitnessA = solution.PartialFitness(locationA);
-
-                    // Remove facility
-                    solution.SetFacility(locationA, null);
+                    int partialFitnessA = partialFitnesses[locationA];
 
                     // For each other facility
                     for (int locationB = locationA + 1; locationB < solution.Size; locationB++)
@@ -174,14 +176,13 @@ namespace QuadraticAssignmentSolver
                         int facilityB = solution.GetFacility(locationB);
 
                         // Get partial fitness for that facility
-                        int partialFitnessB = solution.PartialFitness(locationB);
+                        int partialFitnessB = partialFitnesses[locationB];
 
-                        // Set location B to have facility A and get its partial fitness
+                        // Swap facilities
                         solution.SetFacility(locationB, facilityA);
-                        int partialFitnessC = solution.PartialFitness(locationB);
-
-                        // Set location A to have facility B and get its partial fitness
                         solution.SetFacility(locationA, facilityB);
+
+                        int partialFitnessC = solution.PartialFitness(locationB);
                         int partialFitnessD = solution.PartialFitness(locationA);
 
                         // Calculate fitness diff and check if it is better
@@ -193,7 +194,7 @@ namespace QuadraticAssignmentSolver
                         }
 
                         // Reset location B
-                        solution.SetFacility(locationA, null);
+                        solution.SetFacility(locationA, facilityA);
                         solution.SetFacility(locationB, facilityB);
                     }
 
@@ -225,7 +226,8 @@ namespace QuadraticAssignmentSolver
         {
             // Spawn a thread for each search and save result
             ConcurrentBag<Solution> results = new ConcurrentBag<Solution>();
-            Parallel.For(0, threads, new ParallelOptions {MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, threads)},
+            Parallel.For(0, threads,
+                new ParallelOptions {MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, threads)},
                 _ =>
                 {
                     Solution result = Search(antCount, stopThreshold);
