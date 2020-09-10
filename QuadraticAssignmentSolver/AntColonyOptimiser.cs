@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -150,14 +150,12 @@ namespace QuadraticAssignmentSolver
         {
             solution = solution.Clone();
 
+            // Calculate all partial fitnesses
+            int[] partialFitnesses = solution.AllPartialFitnesses();
+
             // Iterate local search
             while (true)
             {
-                // Calculate all partial fitnesses
-                int[] partialFitnesses = Enumerable.Range(0, solution.Size)
-                    .Select(i => solution.PartialFitness(i))
-                    .ToArray();
-
                 // Want to find best facility swap to minimise fitness
                 int bestFitnessDiff = int.MaxValue;
                 (int LocationA, int LocationB) bestSwap = (0, 0);
@@ -177,6 +175,9 @@ namespace QuadraticAssignmentSolver
 
                         // Get partial fitness for that facility
                         int partialFitnessB = partialFitnesses[locationB];
+
+                        // Note: partialFitnessA and partialFitnessB together double count the AB link but that is later
+                        // canceled out by partialFitnessC and partialFitnessD also double counting it
 
                         // Swap facilities
                         solution.SetFacility(locationB, facilityA);
@@ -205,11 +206,35 @@ namespace QuadraticAssignmentSolver
                 // If no improvement was found, end local search
                 if (bestFitnessDiff >= 0) break;
 
-                // Make best swap
-                (int lA, int lB) = bestSwap;
-                (int fA, int fB) = (solution.GetFacility(lA), solution.GetFacility(lB));
-                solution.SetFacility(lA, fB);
-                solution.SetFacility(lB, fA);
+                {
+                    // Extract values
+                    (int locationA, int locationB) = bestSwap;
+                    (int facilityA, int facilityB) = (solution.GetFacility(locationA), solution.GetFacility(locationB));
+
+                    // Update partial fitnesses by removing location A and B
+                    for (int location = 0; location < partialFitnesses.Length; location++)
+                    {
+                        if (location == locationA || location == locationB) continue;
+                        partialFitnesses[location] -= solution.PartialFitness(location, locationA);
+                        partialFitnesses[location] -= solution.PartialFitness(location, locationB);
+                    }
+
+                    // Make swap
+                    solution.SetFacility(locationA, facilityB);
+                    solution.SetFacility(locationB, facilityA);
+
+                    // Update partial fitnesses by adding new location A and B
+                    for (int location = 0; location < partialFitnesses.Length; location++)
+                    {
+                        if (location == locationA || location == locationB) continue;
+                        partialFitnesses[location] += solution.PartialFitness(location, locationA);
+                        partialFitnesses[location] += solution.PartialFitness(location, locationB);
+                    }
+
+                    // Recalculate partial fitness for location A and B
+                    partialFitnesses[locationA] = solution.PartialFitness(locationA);
+                    partialFitnesses[locationB] = solution.PartialFitness(locationB);
+                }
             }
 
             return solution;

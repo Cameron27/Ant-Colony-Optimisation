@@ -89,32 +89,55 @@ namespace QuadraticAssignmentSolver
 
         public int PartialFitness(int location)
         {
+            int locationA = location;
             int partialFitness = 0;
 
-            int facilityA = _facilitiesAtLocations[location];
+            int facilityA = _facilitiesAtLocations[locationA];
 
             // For every location
             for (int locationB = 0; locationB < _problem.Size; locationB++)
             {
-                if (location == locationB) continue;
+                if (locationA == locationB) continue;
 
                 int facilityB = _facilitiesAtLocations[locationB];
 
                 if (facilityB == -1) continue;
 
                 // Add (flow * distance) to partial fitness
-                partialFitness += _problem.GetFlow(facilityA, facilityB) * _problem.GetDistance(location, locationB);
+                partialFitness += _problem.GetFlow(facilityA, facilityB) * _problem.GetDistance(locationA, locationB);
             }
 
             // Double for symmetry
             return partialFitness * 2;
         }
-        
+
         public int PartialFitness(in int locationA, in int locationB)
         {
             int facilityA = _facilitiesAtLocations[locationA];
             int facilityB = _facilitiesAtLocations[locationB];
             return _problem.GetFlow(facilityA, facilityB) * _problem.GetDistance(locationA, locationB) * 2;
+        }
+
+        public int[] AllPartialFitnesses()
+        {
+            int[] partialFitnesses = new int[Size];
+
+            for (int locationA = 0; locationA < Size; locationA++)
+            {
+                int facilityA = _facilitiesAtLocations[locationA];
+
+                for (int locationB = locationA + 1; locationB < Size; locationB++)
+                {
+                    int facilityB = _facilitiesAtLocations[locationB];
+
+                    int partialFitness = _problem.GetFlow(facilityA, facilityB) *
+                                         _problem.GetDistance(locationA, locationB) * 2;
+                    partialFitnesses[locationA] += partialFitness;
+                    partialFitnesses[locationB] += partialFitness;
+                }
+            }
+
+            return partialFitnesses;
         }
 
         public static (Solution, int) CreateFromFile(string filename, Problem problem)
