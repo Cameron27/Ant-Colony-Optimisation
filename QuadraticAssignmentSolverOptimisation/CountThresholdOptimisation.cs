@@ -9,10 +9,10 @@ namespace QuadraticAssignmentSolverOptimisation
         public string A_Problem = "Examples/sko42.dat";
 
         [Parameters(new object[] {5, 10, 15, 20, 25})]
-        public int B_AntCount = 20;
+        public int B_AntCount;
 
-        [Parameters(new object[] {5, 10, 15, 20, 25})]
-        public int C_StopThreshold = 20;
+        [Parameters(new object[] {5, 10, 15, 20, 25, 30, 35, 40})]
+        public int C_StopThreshold;
 
         public double D_FitnessWeight = 4;
 
@@ -34,7 +34,7 @@ namespace QuadraticAssignmentSolverOptimisation
 
         public void Run()
         {
-            Experimenter.Experimenter.RunExperiment(this, 30);
+            Experimenter.Experimenter.RunExperiment(this, 50);
         }
     }
 }

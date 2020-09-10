@@ -23,11 +23,11 @@ namespace QuadraticAssignmentSolver
             [Option('a', Description = "Algorithm to use")]
             Algorithm algorithm = Algorithm.Concurrent,
             [Option('c', Description = "Number of ants per iteration", ValueName = "1..100")] [Range(1, 100)]
-            int antCount = 20,
+            int antCount = 10,
             [Option('s', Description = "Number of iterations to stop after if there is no improvement",
                 ValueName = "1..1000")]
             [Range(1, 1000)]
-            int stopThreshold = 20,
+            int stopThreshold = 40,
             [Option('t',
                 Description = "Number of threads to use for multi-threaded algorithms (Default: Total CPU Threads)",
                 ValueName = "1..1024")]
