@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -146,7 +146,7 @@ namespace QuadraticAssignmentSolver
         /// </summary>
         /// <param name="solution">The solution to perform the local search on.</param>
         /// <returns>The solution found by local search.</returns>
-        private static Solution LocalSearch(Solution solution)
+        public static Solution LocalSearch(Solution solution)
         {
             solution = solution.Clone();
 
