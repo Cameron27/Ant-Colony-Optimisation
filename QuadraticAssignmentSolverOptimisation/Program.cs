@@ -18,6 +18,9 @@ namespace QuadraticAssignmentSolverOptimisation
                 case "concurrent":
                     new ConcurrentOptimisation().Run();
                     break;
+                case "concurrent_performance":
+                    new ConcurrentPerformanceTest().Run();
+                    break;
                 case "synchronous":
                     new SynchronousParallelOptimisation().Run();
                     break;
