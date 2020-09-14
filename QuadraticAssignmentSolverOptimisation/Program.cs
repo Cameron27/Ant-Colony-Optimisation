@@ -21,8 +21,11 @@ namespace QuadraticAssignmentSolverOptimisation
                 case "concurrent_performance":
                     new ConcurrentPerformanceTest().Run();
                     break;
-                case "synchronous":
-                    new SynchronousParallelOptimisation().Run();
+                case "replicated":
+                    new ReplicatedParallelOptimisation().Run();
+                    break;
+                case "synchronous_performance":
+                    new SynchronousPerformanceTest().Run();
                     break;
                 case "count_threshold":
                     new CountThresholdOptimisation().Run();

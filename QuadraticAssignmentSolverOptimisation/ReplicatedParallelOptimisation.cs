@@ -2,7 +2,7 @@ using Experimenter;
 
 namespace QuadraticAssignmentSolver.Optimisation
 {
-    public class SynchronousParallelOptimisation : Experiment
+    public class ReplicatedParallelOptimisation : Experiment
     {
         [Parameters(new object[] {"Examples/sko42.dat", "Examples/sko49.dat"}, 1)]
         public string A_Problem = "Examples/sko42.dat";
@@ -26,7 +26,7 @@ namespace QuadraticAssignmentSolver.Optimisation
             PheromoneTable.InitialValue = D_InitialValue;
             PheromoneTable.EvaporationRate = E_EvaporationRate;
             return Utils.RunExperiments(
-                $"-a Synchronous -t 4 {A_Problem}".Split(' '));
+                $"-a Replicated -t 4 {A_Problem}".Split(' '));
         }
 
         public void Run()

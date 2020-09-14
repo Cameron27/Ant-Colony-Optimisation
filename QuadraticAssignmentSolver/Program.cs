@@ -9,10 +9,11 @@ namespace QuadraticAssignmentSolver
         public enum Algorithm
         {
             Concurrent,
+            Replicated,
             Synchronous
         }
 
-        public static bool OverrideParameters = true;
+        public static bool UseDefaultParameters = true;
 
         public static void Main(string[] args)
         {
@@ -36,8 +37,10 @@ namespace QuadraticAssignmentSolver
             [Range(1, 1024)]
             int? threads = null)
         {
+            // Set default processor count
             threads ??= Environment.ProcessorCount;
 
+            // Create search object
             AntColonyOptimiser aco;
             try
             {
@@ -50,10 +53,12 @@ namespace QuadraticAssignmentSolver
             }
 
             Solution result;
+            // Select algorithm
             switch (algorithm)
             {
                 case Algorithm.Concurrent:
-                    if (OverrideParameters)
+                    // Set default parameters
+                    if (UseDefaultParameters)
                     {
                         AntColonyOptimiser.FitnessWeight = 1.5;
                         AntColonyOptimiser.PheromoneWeight = 1.5;
@@ -61,10 +66,12 @@ namespace QuadraticAssignmentSolver
                         PheromoneTable.EvaporationRate = 0.4;
                     }
 
+                    // Search
                     result = aco.Search(antCount, stopThreshold);
                     break;
-                case Algorithm.Synchronous:
-                    if (OverrideParameters)
+                case Algorithm.Replicated:
+                    // Set default parameters
+                    if (UseDefaultParameters)
                     {
                         AntColonyOptimiser.FitnessWeight = 1.5;
                         AntColonyOptimiser.PheromoneWeight = 1.5;
@@ -72,6 +79,20 @@ namespace QuadraticAssignmentSolver
                         PheromoneTable.EvaporationRate = 0.4;
                     }
 
+                    // Search
+                    result = aco.ReplicatedParallelSearch(antCount, stopThreshold, (int) threads);
+                    break;
+                case Algorithm.Synchronous:
+                    // Set default parameters
+                    if (UseDefaultParameters)
+                    {
+                        AntColonyOptimiser.FitnessWeight = 1.5;
+                        AntColonyOptimiser.PheromoneWeight = 1.5;
+                        PheromoneTable.InitialValue = 5;
+                        PheromoneTable.EvaporationRate = 0.4;
+                    }
+
+                    // Search
                     result = aco.SynchronousParallelSearch(antCount, stopThreshold, (int) threads);
                     break;
                 default:

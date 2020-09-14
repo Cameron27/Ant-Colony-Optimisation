@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,8 +42,9 @@ namespace QuadraticAssignmentSolver
         /// </summary>
         /// <param name="antCount">The number of ants to use in the search.</param>
         /// <param name="stopThreshold">The number of iterations without any improvement to stop after.</param>
+        /// <param name="threads">The number of threads to use when generating solutions.</param>
         /// <returns>The best solution found.</returns>
-        public Solution Search(int antCount, double stopThreshold)
+        public Solution Search(int antCount, double stopThreshold, int threads = 1)
         {
             PheromoneTable pheromoneTable = new PheromoneTable(_problem);
 
@@ -53,9 +54,24 @@ namespace QuadraticAssignmentSolver
             int iterationsNoImprovement = 0;
             while (iterationsNoImprovement < stopThreshold)
             {
-                // Generate solutions with ants and local search
-                List<Solution> results = new List<Solution>();
-                for (int j = 0; j < antCount; j++) results.Add(LocalSearch(ConstructAntSolution(pheromoneTable)));
+                IEnumerable<Solution> results;
+
+                // Run concurrent if thread count it 1
+                if (threads == 1)
+                {
+                    // Generate solutions with ants and local search
+                    List<Solution> res = new List<Solution>();
+                    for (int j = 0; j < antCount; j++) res.Add(LocalSearch(ConstructAntSolution(pheromoneTable)));
+                    results = res;
+                }
+                else
+                {
+                    // Generate solutions with ants and local search in parallel
+                    ConcurrentBag<Solution> res = new ConcurrentBag<Solution>();
+                    Parallel.For(0, antCount, new ParallelOptions {MaxDegreeOfParallelism = threads},
+                        _ => res.Add(LocalSearch(ConstructAntSolution(pheromoneTable))));
+                    results = res;
+                }
 
                 Solution oldBest = best;
 
@@ -67,7 +83,7 @@ namespace QuadraticAssignmentSolver
                 // Add best solution to the results if it is not already in there
                 if (oldBest != null && oldBest.Fitness == best.Fitness)
                 {
-                    results.Add(best);
+                    results = results.Append(best);
                     iterationsNoImprovement++;
                 }
                 else
@@ -78,7 +94,7 @@ namespace QuadraticAssignmentSolver
                 // Deposit pheromones
                 pheromoneTable.DepositPheromones(results);
             }
-
+            
             return best;
         }
 
@@ -247,12 +263,12 @@ namespace QuadraticAssignmentSolver
         /// <param name="stopThreshold">The number of iterations without any improvement to stop after.</param>
         /// <param name="threads">The number of threads to use.</param>
         /// <returns>The best solution found.</returns>
-        public Solution SynchronousParallelSearch(int antCount, double stopThreshold, int threads)
+        public Solution ReplicatedParallelSearch(int antCount, double stopThreshold, int threads)
         {
             // Spawn a thread for each search and save result
             ConcurrentBag<Solution> results = new ConcurrentBag<Solution>();
             Parallel.For(0, threads,
-                new ParallelOptions {MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, threads)},
+                new ParallelOptions {MaxDegreeOfParallelism = threads},
                 _ =>
                 {
                     Solution result = Search(antCount, stopThreshold);
@@ -273,6 +289,18 @@ namespace QuadraticAssignmentSolver
             }
 
             return bestResult;
+        }
+
+        /// <summary>
+        ///     Perform a search of the solution space using the ACO algorithm with solutions generated in parallel.
+        /// </summary>
+        /// <param name="antCount">The number of ants to use in the search.</param>
+        /// <param name="stopThreshold">The number of iterations without any improvement to stop after.</param>
+        /// <param name="threads">The number of threads to use.</param>
+        /// <returns>The best solution found.</returns>
+        public Solution SynchronousParallelSearch(int antCount, double stopThreshold, int threads)
+        {
+            return Search(antCount, stopThreshold, threads);
         }
     }
 }

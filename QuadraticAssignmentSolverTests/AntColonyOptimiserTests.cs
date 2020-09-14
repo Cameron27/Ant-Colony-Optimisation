@@ -17,6 +17,16 @@ namespace QuadraticAssignmentSolver.Tests
         }
 
         [TestMethod]
+        public void ReplicatedParallelSearchTest()
+        {
+            AntColonyOptimiser aco = new AntColonyOptimiser("Examples/nug12.dat");
+
+            Solution result = aco.ReplicatedParallelSearch(5, 20, Environment.ProcessorCount);
+
+            result.DisplayResult();
+        }
+        
+        [TestMethod]
         public void SynchronousParallelSearchTest()
         {
             AntColonyOptimiser aco = new AntColonyOptimiser("Examples/nug12.dat");
