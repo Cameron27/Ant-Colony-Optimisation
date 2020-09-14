@@ -13,6 +13,7 @@ namespace QuadraticAssignmentSolver.Optimisation
             StringWriter tw = new StringWriter(sb);
             Console.SetOut(tw);
 
+            Program.OverrideParameters = false;
             Program.Main(args);
             int fitness = int.Parse(sb.ToString().Split(Environment.NewLine)[1].Split(' ')[2]);
 

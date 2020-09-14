@@ -4,19 +4,20 @@ namespace QuadraticAssignmentSolver.Optimisation
 {
     public class SynchronousParallelOptimisation : Experiment
     {
+        [Parameters(new object[] {"Examples/sko42.dat", "Examples/sko49.dat"}, 1)]
         public string A_Problem = "Examples/sko42.dat";
 
-        [Parameters(new object[] {1d, 2d, 3d, 4d, 5d})]
-        public double B_FitnessWeight;
+        // [Parameters(new object[] {0.5d, 1d, 1.5d, 2d, 2.5d, 3d})]
+        public double B_FitnessWeight = 2;
 
-        [Parameters(new object[] {1d, 2d, 3d, 4d, 5d})]
-        public double C_PheromoneWeight;
+        // [Parameters(new object[] {0.5d, 1d, 1.5d, 2d, 2.5d, 3d}, -1)]
+        public double C_PheromoneWeight = 1.5;
 
-        [Parameters(new object[] {5d, 1d, 0.5d, 0.1d, 0.05d, 0.01d})]
-        public double D_InitialValue;
+        [Parameters(new object[] {50d, 10d, 5d, 1d, 0.5d, 0.1d}, -2)]
+        public double D_InitialValue = 5;
 
-        [Parameters(new object[] {0.9d, 0.8d, 0.7d, 0.6d, 0.5d, 0.4d, 0.3d})]
-        public double E_EvaporationRate;
+        [Parameters(new object[] {0.7d, 0.6d, 0.5d, 0.4d, 0.3d, 0.2d, 0.1d}, -3)]
+        public double E_EvaporationRate = 0.4;
 
         public override double RunExperiment()
         {
@@ -30,7 +31,7 @@ namespace QuadraticAssignmentSolver.Optimisation
 
         public void Run()
         {
-            Experimenter.Experimenter.RunOptimisation(this, 50, 5);
+            Experimenter.Experimenter.RunExperiment(this, 50, "synchronous_table");
         }
         
     }

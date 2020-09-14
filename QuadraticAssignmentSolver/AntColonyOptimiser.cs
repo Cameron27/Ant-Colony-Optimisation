@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,12 +11,12 @@ namespace QuadraticAssignmentSolver
         /// <summary>
         ///     The exponent for contribution of fitness.
         /// </summary>
-        public static double FitnessWeight = 3;
+        public static double FitnessWeight = 1;
 
         /// <summary>
         ///     The exponent for contribution of pheromone.
         /// </summary>
-        public static double PheromoneWeight = 2;
+        public static double PheromoneWeight = 1;
 
         /// <summary>
         ///     A random object to be used when a source of randomness is needed.

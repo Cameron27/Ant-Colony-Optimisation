@@ -5,7 +5,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using BetterConsoleTables;
 
 namespace Experimenter
@@ -17,17 +16,18 @@ namespace Experimenter
         /// </summary>
         /// <param name="instance">An object to use to perform experiments.</param>
         /// <param name="iterations">The number of iterations to perform per experiment.</param>
+        /// <param name="filename">The filename to save results to, if null results will not ne saved.</param>
         /// <typeparam name="T">The type of the experiment.</typeparam>
         /// <exception cref="ParameterTypeMismatchException">
         ///     A parameter does not match the type of its field.
         /// </exception>
-        public static void RunExperiment<T>(T instance, int iterations, bool useFile = true) where T : Experiment
+        public static void RunExperiment<T>(T instance, int iterations, string filename = null) where T : Experiment
         {
             // Get fields with a ParametersAttribute and the parameters for each of them
             (FieldInfo Field, object[] Parameters)[] fieldParameters = GetFieldParameters(instance.GetType());
 
             // Load results from file
-            string filename = GetFileName(fieldParameters);
+            bool useFile = !string.IsNullOrEmpty(filename);
             List<object[]> results = useFile ? LoadResults(filename) : new List<object[]>();
 
             int[] parameterIndices = new int[fieldParameters.Length];
@@ -309,34 +309,6 @@ namespace Experimenter
 
             // Return empty list
             return new List<object[]>();
-        }
-
-        /// <summary>
-        ///     Creates a unique filename based on a list of fields and parameters.
-        /// </summary>
-        /// <param name="fieldParameters">The list of fields and parameters to create file name from.</param>
-        /// <returns>A unique filename.</returns>
-        private static string GetFileName(IEnumerable<(FieldInfo Field, object[] Parameters)> fieldParameters)
-        {
-            // Create unique string from fields and parameters
-            string uniqueString = fieldParameters.Aggregate("",
-                (current1, fieldParameter) => current1 + fieldParameter.Field.Name + "\0" +
-                                              fieldParameter.Field.FieldType.Name + "\0" +
-                                              fieldParameter.Parameters.Aggregate(current1,
-                                                  (current, parameter) => current + (parameter + "\0")));
-
-            // Compute a hash from the unique string
-            long hash = 45345;
-            for (int i = 0; i < uniqueString.Length; i += 8)
-            {
-                string s = uniqueString[new Range(i, Math.Min(i + 8, uniqueString.Length))];
-                byte[] bytes = Encoding.UTF8.GetBytes(s, 0, s.Length);
-                bytes = bytes.Concat(new byte[8 - bytes.Length]).ToArray();
-                long int64 = BitConverter.ToInt64(bytes);
-                hash ^= int64;
-            }
-
-            return hash + ".results";
         }
     }
 }

@@ -8,7 +8,7 @@ namespace QuadraticAssignmentSolver
         /// <summary>
         ///     The initial pheromone value to use.
         /// </summary>
-        public static double InitialValue = 0.5;
+        public static double InitialValue = 0.1;
 
         /// <summary>
         ///     The portion of pheromone to be carried over in an update.
