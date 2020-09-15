@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace QuadraticAssignmentSolver
@@ -40,6 +41,16 @@ namespace QuadraticAssignmentSolver
         public double GetPheromones(int location, int facility)
         {
             return _table[location * _problem.Size + facility];
+        }
+        
+        public double[] GetAllPheromones()
+        {
+            return _table;
+        }
+        
+        public void SetAllPheromones(double[] pheromones)
+        {
+            Array.Copy(pheromones, _table, pheromones.Length);
         }
 
         /// <summary>

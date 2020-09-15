@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace QuadraticAssignmentSolver
@@ -266,19 +267,19 @@ namespace QuadraticAssignmentSolver
         public Solution ReplicatedParallelSearch(int antCount, double stopThreshold, int threads)
         {
             // Spawn a thread for each search and save result
-            ConcurrentBag<Solution> results = new ConcurrentBag<Solution>();
+            ConcurrentBag<Solution> globalResults = new ConcurrentBag<Solution>();
             Parallel.For(0, threads,
                 new ParallelOptions {MaxDegreeOfParallelism = threads},
                 _ =>
                 {
                     Solution result = Search(antCount, stopThreshold);
-                    results.Add(result);
+                    globalResults.Add(result);
                 });
 
             // Get best result
             Solution bestResult = null;
             int bestFitness = int.MaxValue;
-            foreach (Solution result in results)
+            foreach (Solution result in globalResults)
             {
                 int fitness = result.Fitness;
 
@@ -301,6 +302,152 @@ namespace QuadraticAssignmentSolver
         public Solution SynchronousParallelSearch(int antCount, double stopThreshold, int threads)
         {
             return Search(antCount, stopThreshold, threads);
+        }
+
+        public Solution CourseGrainedSearch(int antCount, int stopThreshold, int threads)
+        {
+            ConcurrentBag<Solution> globalResults = new ConcurrentBag<Solution>();
+
+            // Create pheromone tables
+            PheromoneTable[] pheromoneTables = new PheromoneTable[threads];
+            for (int i = 0; i < threads; i++) pheromoneTables[i] = new PheromoneTable(_problem);
+            ManualResetEvent[] events1 = new ManualResetEvent[threads];
+            ManualResetEvent[] events2 = new ManualResetEvent[threads];
+            for (int i = 0; i < threads; i++) events1[i] = new ManualResetEvent(false);
+            for (int i = 0; i < threads; i++) events2[i] = new ManualResetEvent(false);
+            AutoResetEvent event1 = new AutoResetEvent(false);
+            AutoResetEvent event2 = new AutoResetEvent(false);
+
+            List<int> remainingThreads = Enumerable.Range(0, threads).ToList();
+
+            bool terminateSupervisor = false;
+            object terminateSupervisorLock = new object();
+            Thread t = new Thread(Supervisor);
+            t.Start();
+
+            Parallel.For(0, threads, new ParallelOptions {MaxDegreeOfParallelism = threads}, index =>
+            {
+                Solution best = null;
+
+                // While the stop condition has not been reached
+                int iterationsNoImprovement = 0;
+                int c = 0;
+                while (true)
+                {
+                    // Generate solutions with ants and local search
+                    List<Solution> res = new List<Solution>();
+                    for (int j = 0; j < antCount; j++)
+                        res.Add(LocalSearch(ConstructAntSolution(pheromoneTables[index])));
+
+                    IEnumerable<Solution> results = res;
+
+                    Solution oldBest = best;
+
+                    // Set new best solution
+                    foreach (Solution result in results)
+                        if (best == null || result.Fitness < best.Fitness)
+                            best = result;
+
+                    // Add best solution to the results if it is not already in there
+                    if (oldBest != null && oldBest.Fitness == best.Fitness)
+                    {
+                        results = results.Append(best);
+                        iterationsNoImprovement++;
+                    }
+                    else
+                    {
+                        iterationsNoImprovement = 0;
+                    }
+
+                    // Deposit pheromones
+                    pheromoneTables[index].DepositPheromones(results);
+                    c++;
+
+                    if (c % stopThreshold != 0) continue;
+
+                    if (iterationsNoImprovement == stopThreshold) break;
+
+                    // Synchronise all running threads at this point
+                    events1[index].Set();
+                    event1.WaitOne();
+                    events1[index].Reset();
+
+                    if (index == remainingThreads[0])
+                    {
+                        double[] newPheromones = new double[_problem.Size * _problem.Size];
+                        foreach (PheromoneTable pheromoneTable in pheromoneTables)
+                        {
+                            double[] pheromones = pheromoneTable.GetAllPheromones();
+                            for (int i = 0; i < pheromones.Length; i++) newPheromones[i] += pheromones[i] / threads;
+                        }
+
+                        foreach (PheromoneTable pheromoneTable in pheromoneTables)
+                            pheromoneTable.SetAllPheromones(newPheromones);
+                    }
+
+                    iterationsNoImprovement = 0;
+
+                    // Synchronise all running threads at this point
+                    events2[index].Set();
+                    event2.WaitOne();
+                    events2[index].Reset();
+                }
+
+                remainingThreads.Remove(index);
+
+                // Make this thread no longer block
+                events1[index].Set();
+                events2[index].Set();
+
+                // Output best result
+                globalResults.Add(best);
+            });
+
+            events1[0].Reset();
+            lock (terminateSupervisorLock)
+            {
+                terminateSupervisor = true;
+            }
+
+            // Get best result
+            Solution bestResult = null;
+            int bestFitness = int.MaxValue;
+            foreach (Solution result in globalResults)
+            {
+                int fitness = result.Fitness;
+
+                if (fitness >= bestFitness) continue;
+
+                bestResult = result;
+                bestFitness = fitness;
+            }
+
+            return bestResult;
+
+            // A method to run as a thread that will allow each thread to continue when they all reach the
+            // synchronisation points
+            void Supervisor()
+            {
+                while (true)
+                    if (WaitHandle.WaitAll(events1, 100))
+                    {
+                        event2.Reset();
+                        for (int i = 0; i < threads; i++) event1.Set();
+
+                        WaitHandle.WaitAll(events2);
+                        event1.Reset();
+                        for (int i = 0; i < threads; i++) event2.Set();
+                    }
+                    else
+                    {
+                        lock (terminateSupervisorLock)
+                        {
+                            if (!terminateSupervisor) continue;
+
+                            return;
+                        }
+                    }
+            }
         }
     }
 }

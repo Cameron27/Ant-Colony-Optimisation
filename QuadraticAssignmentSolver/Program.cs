@@ -10,7 +10,8 @@ namespace QuadraticAssignmentSolver
         {
             Concurrent,
             Replicated,
-            Synchronous
+            Synchronous,
+            CourseGrained
         }
 
         public static bool UseDefaultParameters = true;
@@ -94,6 +95,19 @@ namespace QuadraticAssignmentSolver
 
                     // Search
                     result = aco.SynchronousParallelSearch(antCount, stopThreshold, (int) threads);
+                    break;
+                case Algorithm.CourseGrained:
+                    // Set default parameters
+                    if (UseDefaultParameters)
+                    {
+                        AntColonyOptimiser.FitnessWeight = 1.5;
+                        AntColonyOptimiser.PheromoneWeight = 1.5;
+                        PheromoneTable.InitialValue = 5;
+                        PheromoneTable.EvaporationRate = 0.4;
+                    }
+
+                    // Search
+                    result = aco.CourseGrainedSearch(antCount, stopThreshold, (int) threads);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(algorithm), algorithm, null);

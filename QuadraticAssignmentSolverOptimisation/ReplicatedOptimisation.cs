@@ -2,7 +2,7 @@ using Experimenter;
 
 namespace QuadraticAssignmentSolver.Optimisation
 {
-    public class ReplicatedParallelOptimisation : Experiment
+    public class ReplicatedOptimisation : Experiment
     {
         [Parameters(new object[] {"Examples/sko42.dat", "Examples/sko49.dat"}, 1)]
         public string A_Problem = "Examples/sko42.dat";
