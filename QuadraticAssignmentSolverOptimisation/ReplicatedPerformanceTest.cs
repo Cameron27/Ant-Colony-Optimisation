@@ -1,21 +1,24 @@
+using System.Linq;
 using Experimenter;
+using QuadraticAssignmentSolverOptimisation;
 
 namespace QuadraticAssignmentSolver.Optimisation
 {
     public class ReplicatedPerformanceTest : Experiment
     {
-        [Parameters(new object[] {"Examples/sko42.dat"}, 1)]
-        public string Problem = "Examples/sko42.dat";
+        [Parameters(new object[] {"Examples/sko42.dat"})]
+        public string Problem ;
 
-        public override double RunExperiment()
+        public override double[] RunExperiment()
         {
-            return Utils.RunExperiments(
-                $"-a Replicated -t 4 {Problem}".Split(' '));
+            return new AntColonyOptimiser(Problem)
+                .ReplicatedSearch(5, Utils.ProblemTimeDictionary[Problem], 1, 10)
+                .Select(s => (double) s.Fitness).ToArray();
         }
 
         public void Run()
         {
-            Experimenter.Experimenter.RunExperiment(this, 300);
+            Experimenter.Experimenter.RunExperiment(this, 50);
         }
     }
 }

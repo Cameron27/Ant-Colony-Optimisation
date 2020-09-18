@@ -1,5 +1,8 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Cocona;
 
 namespace QuadraticAssignmentSolver
@@ -28,10 +31,10 @@ namespace QuadraticAssignmentSolver
             Algorithm algorithm = Algorithm.Concurrent,
             [Option('c', Description = "Number of ants per iteration", ValueName = "1..100")] [Range(1, 100)]
             int antCount = 5,
-            [Option('s', Description = "Number of iterations to stop after if there is no improvement",
+            [Option('s', Description = "The length of time to run the search for",
                 ValueName = "1..1000")]
             [Range(1, 1000)]
-            int stopThreshold = 20,
+            int runtime = 2,
             [Option('t',
                 Description = "Number of threads to use for multi-threaded algorithms (Default: Total CPU Threads)",
                 ValueName = "1..1024")]
@@ -68,7 +71,7 @@ namespace QuadraticAssignmentSolver
                     }
 
                     // Search
-                    result = aco.Search(antCount, stopThreshold);
+                    result = aco.Search(antCount, runtime, 1);
                     break;
                 case Algorithm.Replicated:
                     // Set default parameters
@@ -79,9 +82,9 @@ namespace QuadraticAssignmentSolver
                         PheromoneTable.InitialValue = 5;
                         PheromoneTable.EvaporationRate = 0.4;
                     }
-
+                
                     // Search
-                    result = aco.ReplicatedParallelSearch(antCount, stopThreshold, (int) threads);
+                    result = aco.ReplicatedSearch(antCount, runtime, (int) threads);
                     break;
                 case Algorithm.Synchronous:
                     // Set default parameters
@@ -92,9 +95,9 @@ namespace QuadraticAssignmentSolver
                         PheromoneTable.InitialValue = 5;
                         PheromoneTable.EvaporationRate = 0.4;
                     }
-
+                
                     // Search
-                    result = aco.SynchronousParallelSearch(antCount, stopThreshold, (int) threads);
+                    result = aco.SynchronousSearch(antCount, runtime, (int) threads);
                     break;
                 case Algorithm.CourseGrained:
                     // Set default parameters
@@ -105,9 +108,9 @@ namespace QuadraticAssignmentSolver
                         PheromoneTable.InitialValue = 5;
                         PheromoneTable.EvaporationRate = 0.4;
                     }
-
+                
                     // Search
-                    result = aco.CourseGrainedSearch(antCount, stopThreshold, (int) threads);
+                    result = aco.CourseGrainedSearch(antCount, runtime, (int) threads);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(algorithm), algorithm, null);

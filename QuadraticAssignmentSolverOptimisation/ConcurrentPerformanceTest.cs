@@ -1,16 +1,19 @@
+using System.Linq;
 using Experimenter;
+using QuadraticAssignmentSolverOptimisation;
 
 namespace QuadraticAssignmentSolver.Optimisation
 {
     public class ConcurrentPerformanceTest : Experiment
     {
-        [Parameters(new object[] {"Examples/sko42.dat", "Examples/sko49.dat"})]
-        public string Problem = "Examples/sko42.dat";
+        [Parameters(new object[] {"Examples/sko42.dat"})]
+        public string Problem;
 
-        public override double RunExperiment()
+        public override double[] RunExperiment()
         {
-            return Utils.RunExperiments(
-                $"{Problem}".Split(' '));
+            return new AntColonyOptimiser(Problem)
+                .Search(5, Utils.ProblemTimeDictionary[Problem], 1, 10)
+                .Select(s => (double) s.Fitness).ToArray();
         }
 
         public void Run()

@@ -1,27 +1,14 @@
-﻿using System;
-using System.IO;
-using System.Text;
+﻿using System.Collections.Generic;
 
-namespace QuadraticAssignmentSolver.Optimisation
+namespace QuadraticAssignmentSolverOptimisation
 {
     public static class Utils
     {
-        public static int RunExperiments(string[] args)
-        {
-            TextWriter stdout = Console.Out;
-            StringBuilder sb = new StringBuilder();
-            StringWriter tw = new StringWriter(sb);
-            Console.SetOut(tw);
-
-            Program.UseDefaultParameters = false;
-            Program.Main(args);
-            int fitness = int.Parse(sb.ToString().Split(Environment.NewLine)[1].Split(' ')[2]);
-
-            sb.Clear();
-
-            Console.SetOut(stdout);
-
-            return fitness;
-        }
+        public static Dictionary<string, double> ProblemTimeDictionary =
+            new Dictionary<string, double>(new List<KeyValuePair<string, double>>
+            {
+                new KeyValuePair<string, double>("Examples/sko42.dat", 2),
+                new KeyValuePair<string, double>("Examples/sko49.dat", 3)
+            });
     }
 }

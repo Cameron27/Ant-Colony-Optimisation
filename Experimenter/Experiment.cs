@@ -11,6 +11,6 @@ namespace Experimenter
 
         internal Dictionary<List<object>, double> ScoresDictionary { get; }
 
-        public abstract double RunExperiment();
+        public abstract double[] RunExperiment();
     }
 }

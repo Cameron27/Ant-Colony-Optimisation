@@ -15,14 +15,8 @@ namespace QuadraticAssignmentSolverOptimisation
 
             switch (args[0].ToLower())
             {
-                case "concurrent":
-                    new ConcurrentOptimisation().Run();
-                    break;
                 case "concurrent_performance":
                     new ConcurrentPerformanceTest().Run();
-                    break;
-                case "replicated":
-                    new ReplicatedOptimisation().Run();
                     break;
                 case "replicated_performance":
                     new ReplicatedPerformanceTest().Run();
@@ -33,8 +27,8 @@ namespace QuadraticAssignmentSolverOptimisation
                 case "course_grained_performance":
                     new CourseGrainedPerformanceTest().Run();
                     break;
-                case "count_threshold":
-                    new CountThresholdOptimisation().Run();
+                case "all_performance":
+                    new AllPerformanceTest().Run();
                     break;
                 default:
                     Console.Error.WriteLine("Argument is invalid.");

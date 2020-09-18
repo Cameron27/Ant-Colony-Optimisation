@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace QuadraticAssignmentSolver
 {
@@ -42,61 +41,123 @@ namespace QuadraticAssignmentSolver
         ///     Perform a search of the solution space using the ACO algorithm.
         /// </summary>
         /// <param name="antCount">The number of ants to use in the search.</param>
-        /// <param name="stopThreshold">The number of iterations without any improvement to stop after.</param>
+        /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
         /// <param name="threads">The number of threads to use when generating solutions.</param>
-        /// <returns>The best solution found.</returns>
-        public Solution Search(int antCount, double stopThreshold, int threads = 1)
+        /// <param name="divisionCount">The number of points to return the best solution at throughout the search.</param>
+        /// <returns>An array of the best solution found at each division, the last solution is the best solution found overall.</returns>
+        public Solution[] Search(int antCount, double runtime, int threads, int divisionCount)
         {
             PheromoneTable pheromoneTable = new PheromoneTable(_problem);
 
             Solution best = null;
+            Solution[] bestAtDivisions = new Solution[divisionCount];
+
+            long startTime = DateTime.Now.Ticks;
+            long totalAllowedTime = (long) (runtime * TimeSpan.TicksPerSecond);
+            long divisionSize = totalAllowedTime / divisionCount;
+            int currentDivision = 0;
 
             // While the stop condition has not been reached
-            int iterationsNoImprovement = 0;
-            while (iterationsNoImprovement < stopThreshold)
+            while (true)
             {
-                IEnumerable<Solution> results;
-
-                // Run concurrent if thread count it 1
-                if (threads == 1)
-                {
-                    // Generate solutions with ants and local search
-                    List<Solution> res = new List<Solution>();
-                    for (int j = 0; j < antCount; j++) res.Add(LocalSearch(ConstructAntSolution(pheromoneTable)));
-                    results = res;
-                }
-                else
-                {
-                    // Generate solutions with ants and local search in parallel
-                    ConcurrentBag<Solution> res = new ConcurrentBag<Solution>();
-                    Parallel.For(0, antCount, new ParallelOptions {MaxDegreeOfParallelism = threads},
-                        _ => res.Add(LocalSearch(ConstructAntSolution(pheromoneTable))));
-                    results = res;
-                }
-
-                Solution oldBest = best;
+                // Run ants
+                IEnumerable<Solution> results = RunAnts(antCount, threads, pheromoneTable);
 
                 // Set new best solution
-                foreach (Solution result in results)
-                    if (best == null || result.Fitness < best.Fitness)
-                        best = result;
-
-                // Add best solution to the results if it is not already in there
-                if (oldBest != null && oldBest.Fitness == best.Fitness)
-                {
+                if (IsNewBest(results, ref best))
                     results = results.Append(best);
-                    iterationsNoImprovement++;
-                }
-                else
-                {
-                    iterationsNoImprovement = 0;
-                }
 
                 // Deposit pheromones
                 pheromoneTable.DepositPheromones(results);
+
+                // Check if divisions have been reached and results need to be saved and end if final result was saved
+                if (StoreSolutions(divisionCount, divisionSize, startTime, bestAtDivisions, best, ref currentDivision))
+                    break;
             }
-            
-            return best;
+
+            return bestAtDivisions;
+        }
+
+        private IEnumerable<Solution> RunAnts(int antCount, int threads, PheromoneTable pheromoneTable)
+        {
+            // Run concurrent if thread count it 1
+            if (threads == 1)
+            {
+                // Generate solutions with ants and local search
+                List<Solution> results = new List<Solution>();
+                for (int j = 0; j < antCount; j++) results.Add(LocalSearch(ConstructAntSolution(pheromoneTable)));
+                return results;
+            }
+            else
+            {
+                // Generate solutions with ants and local search in parallel
+                ConcurrentBag<Solution> results = new ConcurrentBag<Solution>();
+                ParallelFor(0, antCount, threads,
+                    _ => results.Add(LocalSearch(ConstructAntSolution(pheromoneTable))));
+                return results;
+            }
+        }
+
+        /// <summary>
+        ///     Checks if there is a new best result in a collection of results.
+        /// </summary>
+        /// <param name="results">The collection of results to search for a new best result in.</param>
+        /// <param name="best">
+        ///     A reference to the current best result. If a new best result was found this reference will be set to
+        ///     it.
+        /// </param>
+        /// <returns>True if a new best result was found.</returns>
+        private static bool IsNewBest(IEnumerable<Solution> results, ref Solution best)
+        {
+            Solution oldBest = best;
+
+            // Find if there is a new best
+            foreach (Solution result in results)
+                if (best == null || result.Fitness < best.Fitness)
+                    best = result;
+
+            // Return true if new best was found
+            return best != oldBest;
+        }
+
+        /// <summary>
+        ///     Stores the current result if a division has been reached and then returns if all divisions have been
+        ///     reached.
+        /// </summary>
+        /// <param name="divisionCount">The number of divisions.</param>
+        /// <param name="divisionSize">The size of a single division in ticks.</param>
+        /// <param name="startTime">The start time of search in ticks.</param>
+        /// <param name="bestAtDivisions">A list of best solutions at each division. This list can be modified.</param>
+        /// <param name="best">The current best solution.</param>
+        /// <param name="currentDivision">A reference to the current division.</param>
+        /// <returns>True if the final division was filled.</returns>
+        private static bool StoreSolutions(int divisionCount, long divisionSize, long startTime,
+            IList<Solution> bestAtDivisions, Solution best, ref int currentDivision)
+        {
+            long nowTime = DateTime.Now.Ticks;
+            // Fill divisions while needed
+            while ((currentDivision + 1) * divisionSize < nowTime - startTime)
+            {
+                // Save current best
+                bestAtDivisions[currentDivision] = best;
+                currentDivision++;
+                // Check if done
+                if (currentDivision == divisionCount) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        ///     Perform a search of the solution space using the ACO algorithm.
+        /// </summary>
+        /// <param name="antCount">The number of ants to use in the search.</param>
+        /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
+        /// <param name="threads">The number of threads to use when generating solutions.</param>
+        /// <returns>The best solution found.</returns>
+        public Solution Search(int antCount, double runtime, int threads)
+        {
+            return Search(antCount, runtime, 1, threads)[0];
         }
 
         /// <summary>
@@ -261,119 +322,196 @@ namespace QuadraticAssignmentSolver
         ///     Perform a search of the solution space using the ACO algorithm multiple times in parallel.
         /// </summary>
         /// <param name="antCount">The number of ants to use in the search.</param>
-        /// <param name="stopThreshold">The number of iterations without any improvement to stop after.</param>
+        /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
         /// <param name="threads">The number of threads to use.</param>
-        /// <returns>The best solution found.</returns>
-        public Solution ReplicatedParallelSearch(int antCount, double stopThreshold, int threads)
+        /// <param name="divisionCount">The number of points to return the best solution at throughout the search.</param>
+        /// <returns>An array of the best solution found at each division, the last solution is the best solution found overall.</returns>
+        public Solution[] ReplicatedSearch(int antCount, double runtime, int threads, int divisionCount)
         {
             // Spawn a thread for each search and save result
-            ConcurrentBag<Solution> globalResults = new ConcurrentBag<Solution>();
-            Parallel.For(0, threads,
-                new ParallelOptions {MaxDegreeOfParallelism = threads},
-                _ =>
-                {
-                    Solution result = Search(antCount, stopThreshold);
-                    globalResults.Add(result);
-                });
-
-            // Get best result
-            Solution bestResult = null;
-            int bestFitness = int.MaxValue;
-            foreach (Solution result in globalResults)
+            ConcurrentBag<Solution[]> globalSolutions = new ConcurrentBag<Solution[]>();
+            ParallelFor(0, threads, threads, _ =>
             {
-                int fitness = result.Fitness;
+                Solution[] solutions = Search(antCount, runtime, 1, divisionCount);
+                globalSolutions.Add(solutions);
+            });
 
-                if (fitness >= bestFitness) continue;
+            // Get best results
+            Solution[] bestSolutions = new Solution[divisionCount];
+            int[] bestFitnesses = new int[divisionCount];
+            Array.Fill(bestFitnesses, int.MaxValue);
+            foreach (Solution[] results in globalSolutions)
+                for (int i = 0; i < divisionCount; i++)
+                {
+                    int fitness = results[i].Fitness;
 
-                bestResult = result;
-                bestFitness = fitness;
-            }
+                    if (fitness >= bestFitnesses[i]) continue;
 
-            return bestResult;
+                    bestSolutions[i] = results[i];
+                    bestFitnesses[i] = fitness;
+                }
+
+            return bestSolutions;
+        }
+
+        /// <summary>
+        ///     Perform a search of the solution space using the ACO algorithm multiple times in parallel.
+        /// </summary>
+        /// <param name="antCount">The number of ants to use in the search.</param>
+        /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
+        /// <param name="threads">The number of threads to use.</param>
+        /// <returns>The best solution found.</returns>
+        public Solution ReplicatedSearch(int antCount, double runtime, int threads)
+        {
+            return ReplicatedSearch(antCount, runtime, threads, 1)[0];
         }
 
         /// <summary>
         ///     Perform a search of the solution space using the ACO algorithm with solutions generated in parallel.
         /// </summary>
         /// <param name="antCount">The number of ants to use in the search.</param>
-        /// <param name="stopThreshold">The number of iterations without any improvement to stop after.</param>
+        /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
         /// <param name="threads">The number of threads to use.</param>
-        /// <returns>The best solution found.</returns>
-        public Solution SynchronousParallelSearch(int antCount, double stopThreshold, int threads)
+        /// <param name="divisionCount">The number of points to return the best solution at throughout the search.</param>
+        /// <returns>An array of the best solution found at each division, the last solution is the best solution found overall.</returns>
+        public Solution[] SynchronousSearch(int antCount, double runtime, int threads, int divisionCount)
         {
-            return Search(antCount, stopThreshold, threads);
+            return Search(antCount, runtime, threads, divisionCount);
         }
 
-        public Solution CourseGrainedSearch(int antCount, int stopThreshold, int threads)
+        /// <summary>
+        ///     Perform a search of the solution space using the ACO algorithm with solutions generated in parallel.
+        /// </summary>
+        /// <param name="antCount">The number of ants to use in the search.</param>
+        /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
+        /// <param name="threads">The number of threads to use.</param>
+        /// <returns>The best solution found.</returns>
+        public Solution SynchronousSearch(int antCount, double runtime, int threads)
         {
-            ConcurrentBag<Solution> globalResults = new ConcurrentBag<Solution>();
+            return SynchronousSearch(antCount, runtime, threads, 1)[0];
+        }
+
+        /// <summary>
+        ///     Perform a search of the solution space using the ACO algorithm multiple times in parallel with information from the
+        ///     pheromone tables being shared between each instance of the search.
+        /// </summary>
+        /// <param name="antCount">The number of ants to use in the search.</param>
+        /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
+        /// <param name="threads">The number of threads to use.</param>
+        /// <param name="divisionCount">
+        ///     The number of points to return the best solution at throughout the search.
+        /// </param>
+        /// <returns>An array of the best solution found at each division, the last solution is the best solution found overall.</returns>
+        public Solution[] CourseGrainedSearch(int antCount, double runtime, int threads, int divisionCount)
+        {
+            // Number of syncs that will be performed between threads
+            const int numOfSyncs = 5;
+
+            ConcurrentBag<Solution[]> globalSolutions = new ConcurrentBag<Solution[]>();
 
             // Create pheromone tables
             PheromoneTable[] pheromoneTables = new PheromoneTable[threads];
             for (int i = 0; i < threads; i++) pheromoneTables[i] = new PheromoneTable(_problem);
-            ManualResetEvent[] events1 = new ManualResetEvent[threads];
-            ManualResetEvent[] events2 = new ManualResetEvent[threads];
-            for (int i = 0; i < threads; i++) events1[i] = new ManualResetEvent(false);
-            for (int i = 0; i < threads; i++) events2[i] = new ManualResetEvent(false);
-            AutoResetEvent event1 = new AutoResetEvent(false);
-            AutoResetEvent event2 = new AutoResetEvent(false);
 
+            // Create events used for thread synchronisation
+            ManualResetEvent[] synchroniseEvents1 = new ManualResetEvent[threads];
+            ManualResetEvent[] synchroniseEvents2 = new ManualResetEvent[threads];
+            for (int i = 0; i < threads; i++)
+            {
+                synchroniseEvents1[i] = new ManualResetEvent(false);
+                synchroniseEvents2[i] = new ManualResetEvent(false);
+            }
+
+            // Create events used to allow threads to continue once they synchronise
+            AutoResetEvent gateEvent1 = new AutoResetEvent(false);
+            AutoResetEvent gateEvent2 = new AutoResetEvent(false);
+
+            // List of indices of remaining threads used to determine which thread should handle pheromone sharing
             List<int> remainingThreads = Enumerable.Range(0, threads).ToList();
 
+            // Create supervisor thread
             bool terminateSupervisor = false;
             object terminateSupervisorLock = new object();
-            Thread t = new Thread(Supervisor);
-            t.Start();
+            Thread supervisor = new Thread(Supervisor);
+            supervisor.Start();
 
-            Parallel.For(0, threads, new ParallelOptions {MaxDegreeOfParallelism = threads}, index =>
+            // Run search threads in parallel
+            ParallelFor(0, threads, threads, SearchThread);
+
+            // Unset one of synchroniseEvents1 so supervisor will timeout and check for terminateSupervisor being set to
+            // true
+            synchroniseEvents1[0].Reset();
+            lock (terminateSupervisorLock)
+            {
+                terminateSupervisor = true;
+            }
+
+            // Get best results
+            Solution[] bestSolutions = new Solution[divisionCount];
+            int[] bestFitnesses = new int[divisionCount];
+            Array.Fill(bestFitnesses, int.MaxValue);
+            foreach (Solution[] results in globalSolutions)
+                for (int i = 0; i < divisionCount; i++)
+                {
+                    int fitness = results[i].Fitness;
+
+                    if (fitness >= bestFitnesses[i]) continue;
+
+                    bestSolutions[i] = results[i];
+                    bestFitnesses[i] = fitness;
+                }
+
+            return bestSolutions;
+
+            // A method to run as a thread to search the solution space
+            void SearchThread(int index)
             {
                 Solution best = null;
+                Solution[] bestAtDivisions = new Solution[divisionCount];
+
+                long startTime = DateTime.Now.Ticks;
+                long totalAllowedTime = (long) (runtime * TimeSpan.TicksPerSecond);
+                long divisionSize = totalAllowedTime / divisionCount;
+                int currentDivision = 0;
+                int iterationsRun = 0;
+                int nextPheromoneShareIndex = 1;
 
                 // While the stop condition has not been reached
-                int iterationsNoImprovement = 0;
-                int c = 0;
                 while (true)
                 {
-                    // Generate solutions with ants and local search
-                    List<Solution> res = new List<Solution>();
-                    for (int j = 0; j < antCount; j++)
-                        res.Add(LocalSearch(ConstructAntSolution(pheromoneTables[index])));
-
-                    IEnumerable<Solution> results = res;
-
-                    Solution oldBest = best;
+                    // Run ants
+                    IEnumerable<Solution> results = RunAnts(antCount, threads, pheromoneTables[index]);
 
                     // Set new best solution
-                    foreach (Solution result in results)
-                        if (best == null || result.Fitness < best.Fitness)
-                            best = result;
-
-                    // Add best solution to the results if it is not already in there
-                    if (oldBest != null && oldBest.Fitness == best.Fitness)
-                    {
+                    if (IsNewBest(results, ref best))
                         results = results.Append(best);
-                        iterationsNoImprovement++;
-                    }
-                    else
-                    {
-                        iterationsNoImprovement = 0;
-                    }
 
                     // Deposit pheromones
                     pheromoneTables[index].DepositPheromones(results);
-                    c++;
 
-                    if (c % stopThreshold != 0) continue;
+                    // Check if divisions have been reached and results need to be saved and end if final result was saved
+                    if (StoreSolutions(divisionCount, divisionSize, startTime, bestAtDivisions, best,
+                        ref currentDivision))
+                        break;
 
-                    if (iterationsNoImprovement == stopThreshold) break;
+                    iterationsRun++;
+
+
+                    // Sync if enough time has passed
+                    if (DateTime.Now.Ticks - startTime <
+                        nextPheromoneShareIndex * totalAllowedTime / numOfSyncs) continue;
+
+                    nextPheromoneShareIndex++;
 
                     // Synchronise all running threads at this point
-                    events1[index].Set();
-                    event1.WaitOne();
-                    events1[index].Reset();
+                    synchroniseEvents1[index].Set();
+                    gateEvent1.WaitOne();
+                    synchroniseEvents1[index].Reset();
 
+                    // Have one thread share pheromone data
                     if (index == remainingThreads[0])
                     {
+                        // New pheromones are the max for each index from the pheromone table
                         double[] newPheromones = new double[_problem.Size * _problem.Size];
                         foreach (PheromoneTable pheromoneTable in pheromoneTables)
                         {
@@ -381,65 +519,52 @@ namespace QuadraticAssignmentSolver
                             for (int i = 0; i < pheromones.Length; i++) newPheromones[i] += pheromones[i] / threads;
                         }
 
+                        // Assign new pheromones
                         foreach (PheromoneTable pheromoneTable in pheromoneTables)
                             pheromoneTable.SetAllPheromones(newPheromones);
                     }
 
-                    iterationsNoImprovement = 0;
-
                     // Synchronise all running threads at this point
-                    events2[index].Set();
-                    event2.WaitOne();
-                    events2[index].Reset();
+                    synchroniseEvents2[index].Set();
+                    gateEvent2.WaitOne();
+                    synchroniseEvents2[index].Reset();
                 }
 
+                // Remove self from and mark as synchronised to allow other threads to continue
                 remainingThreads.Remove(index);
+                synchroniseEvents1[index].Set();
+                synchroniseEvents2[index].Set();
 
-                // Make this thread no longer block
-                events1[index].Set();
-                events2[index].Set();
-
-                // Output best result
-                globalResults.Add(best);
-            });
-
-            events1[0].Reset();
-            lock (terminateSupervisorLock)
-            {
-                terminateSupervisor = true;
+                // Add best result
+                globalSolutions.Add(bestAtDivisions);
             }
-
-            // Get best result
-            Solution bestResult = null;
-            int bestFitness = int.MaxValue;
-            foreach (Solution result in globalResults)
-            {
-                int fitness = result.Fitness;
-
-                if (fitness >= bestFitness) continue;
-
-                bestResult = result;
-                bestFitness = fitness;
-            }
-
-            return bestResult;
 
             // A method to run as a thread that will allow each thread to continue when they all reach the
             // synchronisation points
             void Supervisor()
             {
                 while (true)
-                    if (WaitHandle.WaitAll(events1, 100))
+                    // Wait for all threads to reach synchronisation point 1
+                    if (WaitHandle.WaitAll(synchroniseEvents1, 100))
                     {
-                        event2.Reset();
-                        for (int i = 0; i < threads; i++) event1.Set();
+                        // Stop access through synchronisation point 2
+                        gateEvent2.Reset();
 
-                        WaitHandle.WaitAll(events2);
-                        event1.Reset();
-                        for (int i = 0; i < threads; i++) event2.Set();
+                        // Let all the threads through synchronisation point 1
+                        for (int i = 0; i < threads; i++) gateEvent1.Set();
+
+                        // Wait for all threads to reach synchronisation point 2
+                        WaitHandle.WaitAll(synchroniseEvents2);
+
+                        // Stop access through synchronisation point 1
+                        gateEvent1.Reset();
+
+                        // Let all the threads through synchronisation point 2
+                        for (int i = 0; i < threads; i++) gateEvent2.Set();
                     }
                     else
                     {
+                        // Check if thread should end
                         lock (terminateSupervisorLock)
                         {
                             if (!terminateSupervisor) continue;
@@ -447,6 +572,56 @@ namespace QuadraticAssignmentSolver
                             return;
                         }
                     }
+            }
+        }
+
+        /// <summary>
+        ///     Perform a search of the solution space using the ACO algorithm multiple times in parallel with information from the
+        ///     pheromone tables being shared between each instance of the search.
+        /// </summary>
+        /// <param name="antCount">The number of ants to use in the search.</param>
+        /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
+        /// <param name="threads">The number of threads to use.</param>
+        /// <returns>The best solution found.</returns>
+        public Solution CourseGrainedSearch(int antCount, double runtime, int threads)
+        {
+            return CourseGrainedSearch(antCount, runtime, threads, 1)[0];
+        }
+
+        /// <summary>
+        ///     Run and action a specified number of times in parallel.
+        /// </summary>
+        /// <param name="fromInclusive">The index to start from (inclusive).</param>
+        /// <param name="toExclusive">The index to stop at (exclusive).</param>
+        /// <param name="maxDegreeOfParallelism">The maximum number of threads to run at a time.</param>
+        /// <param name="action">The action to run. Each call of the action with have an index passed into it.</param>
+        private static void ParallelFor(int fromInclusive, int toExclusive, int maxDegreeOfParallelism,
+            Action<int> action)
+        {
+            int count = toExclusive - fromInclusive;
+            // Queue of indices to run
+            ConcurrentQueue<int> indices = new ConcurrentQueue<int>(Enumerable.Range(fromInclusive, count));
+
+            // Create and run threads then wait for them to finish
+            Enumerable.Range(0, Math.Min(count, maxDegreeOfParallelism))
+                .Select(_ =>
+                {
+                    Thread t = new Thread(MainThread);
+                    t.Start();
+                    return t;
+                })
+                .ToList()
+                .ForEach(thread => thread.Join());
+
+            // Method that makes the thread that is run
+            void MainThread()
+            {
+                // While there are still remaining indices, take one and run it
+                while (indices.TryDequeue(out int index))
+                {
+                    int i = index;
+                    action.Invoke(i);
+                }
             }
         }
     }

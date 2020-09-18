@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using BetterConsoleTables;
+using MathNet.Numerics.Statistics;
 
 namespace Experimenter
 {
@@ -45,25 +44,10 @@ namespace Experimenter
                 }
             }
 
-            // Setup table headers
-            ColumnHeader[] headers = fieldParameters
-                .Select(fp => fp.Field.Name)
-                .Reverse()
-                .Union(new[]
-                {
-                    "Score Average", "Score Min", "Score Max", "Score SD", "Time Average", "Time Min", "Time Max",
-                    "Time SD"
-                })
-                .Select(s => new ColumnHeader(s))
-                .ToArray();
-
-            // Create table
-            Table table = new Table(headers) {Config = TableConfiguration.Unicode()};
-
             // Count up indices while all combinations have not been done
             while (parameterIndices[^1] != fieldParameterCounts[^1])
             {
-                object[] result = new object[table.Columns.Count];
+                List<object> result = new List<object>();
 
                 // Set parameter values and fill in parameter values in table
                 for (int i = 0; i < fieldParameters.Length; i++)
@@ -71,12 +55,11 @@ namespace Experimenter
                     (FieldInfo field, object[] parameters) = fieldParameters[i];
                     field.SetValue(instance, parameters[parameterIndices[i]]);
 
-                    result[fieldParameters.Length - i - 1] = parameters[parameterIndices[i]];
+                    result.Insert(0, parameters[parameterIndices[i]]);
                 }
 
                 // Perform iterations and save results
-                double[] scores = new double[iterations];
-                long[] times = new long[iterations];
+                double[][] scores = new double[iterations][];
                 for (int i = 0; i < iterations; i++)
                 {
                     // Run GC to increase consistency
@@ -84,26 +67,19 @@ namespace Experimenter
                     GC.WaitForPendingFinalizers();
                     GC.Collect();
 
-                    long startTime = Stopwatch.GetTimestamp() / TimeSpan.TicksPerMillisecond;
                     scores[i] = instance.RunExperiment();
-                    times[i] = Stopwatch.GetTimestamp() / TimeSpan.TicksPerMillisecond - startTime;
                 }
 
-                // Calculate and set stats in table
-                object v1, v2, v3, v4;
-                (v1, v2, v3, v4) = CalculateStats(scores);
-                result[^8] = v1;
-                result[^7] = v2;
-                result[^6] = v3;
-                result[^5] = v4;
-                (v1, v2, v3, v4) = CalculateStats(times);
-                result[^4] = v1;
-                result[^3] = v2;
-                result[^2] = v3;
-                result[^1] = v4;
+                scores = Rotate(scores);
 
-                results.Add(result);
-                if (useFile) WriteResult(filename, result);
+                object[] stats = scores.SelectMany(array => new object[]
+                        {array.Mean(), array.Minimum(), array.Maximum(), array.PopulationStandardDeviation()})
+                    .ToArray();
+
+                result.AddRange(stats);
+
+                results.Add(result.ToArray());
+                if (useFile) WriteResult(filename, result.ToArray());
 
                 // Count up parameter indices
                 parameterIndices[0]++;
@@ -116,85 +92,112 @@ namespace Experimenter
                 }
             }
 
+            // Setup table headers
+            ColumnHeader[] headers = fieldParameters
+                .Select(fp => fp.Field.Name)
+                .Reverse()
+                .Union(
+                    Enumerable.Range(0, results[0].Length / 4)
+                        .SelectMany(i => new[] {"Mean " + i, "Min " + i, "Max " + i, "SD " + i})
+                )
+                .Select(s => new ColumnHeader(s))
+                .ToArray();
+
+            
+            // Create table
+            TableConfiguration tc = new TableConfiguration
+            {
+                hasTopRow = false, hasHeaderRow = false, hasInnerRows = false, innerColumnDelimiter = ','
+            };
+            Table table = new Table(headers) {Config = tc};
             table.AddRows(results);
 
             // Print out table
             Console.WriteLine(table.ToString());
-        }
 
-        public static void RunOptimisation<T>(T instance, int iterations, int optimisationIterations)
-            where T : Experiment
-        {
-            Random rnd = new Random();
-
-            // Get fields with a ParametersAttribute and the parameters for each of them
-            (FieldInfo Field, object[] Parameters)[] fieldParameters = GetFieldParameters(instance.GetType());
-
-            foreach ((FieldInfo field, object[] parameters) in fieldParameters)
-                if (!parameters.Contains(field.GetValue(instance)))
-                    field.SetValue(instance, parameters[parameters.Length / 2]);
-
-            // For number of iterations
-            for (int i = 0; i < optimisationIterations; i++)
+            // Rotate a jagged array
+            static U[][] Rotate<U>(U[][] input)
             {
-                // For each field
-                foreach ((FieldInfo field, object[] parameters) in fieldParameters.OrderBy(_ => rnd.Next()))
-                {
-                    // For each parameter get the average score with that parameter set
-                    List<double> scores = new List<double>();
-                    foreach (object parameter in parameters)
-                    {
-                        field.SetValue(instance, parameter);
-
-                        scores.Add(CalculateScore(instance, iterations, fieldParameters));
-                    }
-
-                    // Find best score
-                    int bestIndex = 0;
-                    double bestScore = scores[0];
-                    for (int index = 0; index < scores.Count; index++)
-                    {
-                        double score = scores[index];
-                        if (!(score < bestScore)) continue;
-                        bestScore = score;
-                        bestIndex = index;
-                    }
-
-                    // Set field to parameter that gave the best score
-                    field.SetValue(instance, parameters[bestIndex]);
-
-                    Console.WriteLine(
-                        $"Optimising {field.Name} gave a best score of {scores[bestIndex].ToString(CultureInfo.CurrentCulture)} for the parameter {parameters[bestIndex]}");
-                }
-
-                Console.WriteLine($"After {i + 1} iterations the configuration is:");
-                foreach ((FieldInfo field, object[] _) in fieldParameters)
-                    Console.WriteLine($"\t{field.Name}: {field.GetValue(instance)}");
-            }
-
-            // Calculates the score by running a number of iterations with the current configuration or by looking up
-            // the result of a previous run with the same configuration
-            static double CalculateScore(T instance, int iterations,
-                IEnumerable<(FieldInfo Field, object[] Parameters)> fieldParameters)
-            {
-                List<object> key = fieldParameters.Select(tuple => tuple.Field)
-                    .Select(field => field.GetValue(instance))
-                    .ToListKey();
-
-                if (instance.ScoresDictionary.ContainsKey(key))
-                    return instance.ScoresDictionary[key];
-
-                // Perform a number of runs based on the number of iterations and store the results
-                List<double> scores = new List<double>();
-                for (int i = 0; i < iterations; i++) scores.Add(instance.RunExperiment());
-
-                double score = CalculateStats(scores).Average;
-                instance.ScoresDictionary[key] = score;
-
-                // Return average
-                return score;
+                int length = input[0].Length;
+                U[][] retVal = new U[length][];
+                for (int x = 0; x < length; x++) retVal[x] = input.Select(p => p[x]).ToArray();
+                return retVal;
             }
         }
+
+        // public static void RunOptimisation<T>(T instance, int iterations, int optimisationIterations)
+        //     where T : Experiment
+        // {
+        //     Random rnd = new Random();
+        //
+        //     // Get fields with a ParametersAttribute and the parameters for each of them
+        //     (FieldInfo Field, object[] Parameters)[] fieldParameters = GetFieldParameters(instance.GetType());
+        //
+        //     foreach ((FieldInfo field, object[] parameters) in fieldParameters)
+        //         if (!parameters.Contains(field.GetValue(instance)))
+        //             field.SetValue(instance, parameters[parameters.Length / 2]);
+        //
+        //     // For number of iterations
+        //     for (int i = 0; i < optimisationIterations; i++)
+        //     {
+        //         // For each field
+        //         foreach ((FieldInfo field, object[] parameters) in fieldParameters.OrderBy(_ => rnd.Next()))
+        //         {
+        //             // For each parameter get the average score with that parameter set
+        //             List<double> scores = new List<double>();
+        //             foreach (object parameter in parameters)
+        //             {
+        //                 field.SetValue(instance, parameter);
+        //
+        //                 scores.Add(CalculateScore(instance, iterations, fieldParameters));
+        //             }
+        //
+        //             // Find best score
+        //             int bestIndex = 0;
+        //             double bestScore = scores[0];
+        //             for (int index = 0; index < scores.Count; index++)
+        //             {
+        //                 double score = scores[index];
+        //                 if (!(score < bestScore)) continue;
+        //                 bestScore = score;
+        //                 bestIndex = index;
+        //             }
+        //
+        //             // Set field to parameter that gave the best score
+        //             field.SetValue(instance, parameters[bestIndex]);
+        //
+        //             Console.WriteLine(
+        //                 $"Optimising {field.Name} gave a best score of {scores[bestIndex].ToString(CultureInfo.CurrentCulture)} for the parameter {parameters[bestIndex]}");
+        //         }
+        //
+        //         Console.WriteLine($"After {i + 1} iterations the configuration is:");
+        //         foreach ((FieldInfo field, object[] _) in fieldParameters)
+        //             Console.WriteLine($"\t{field.Name}: {field.GetValue(instance)}");
+        //     }
+        //
+        //     // Calculates the score by running a number of iterations with the current configuration or by looking up
+        //     // the result of a previous run with the same configuration
+        //     static double CalculateScore(T instance, int iterations,
+        //         IEnumerable<(FieldInfo Field, object[] Parameters)> fieldParameters)
+        //     {
+        //         List<object> key = fieldParameters.Select(tuple => tuple.Field)
+        //             .Select(field => field.GetValue(instance))
+        //             .ToListKey();
+        //
+        //         if (instance.ScoresDictionary.ContainsKey(key))
+        //             return instance.ScoresDictionary[key];
+        //
+        //         // Perform a number of runs based on the number of iterations and store the results
+        //         List<double> scores = new List<double>();
+        //         for (int i = 0; i < iterations; i++) scores.Add(instance.RunExperiment());
+        //
+        //         double score = CalculateStats(scores).Average;
+        //         instance.ScoresDictionary[key] = score;
+        //
+        //         // Return average
+        //         return score;
+        //     }
+        // }
 
         /// <summary>
         ///     Get all the fields with a <code>ParametersAttribute</code> and the parameters for those fields.
@@ -227,37 +230,6 @@ namespace Experimenter
                 .Select(field => (field, field.GetCustomAttribute<ParametersAttribute>().Parameters))
                 .ToArray();
             return fieldParameters;
-        }
-
-        /// <summary>
-        ///     Calculate the average, min, max and standard deviation of an array of values.
-        /// </summary>
-        /// <param name="values">The array of values to calculate the stats with.</param>
-        /// <returns>A tuple containing the average, min, max and standard deviation of the values.</returns>
-        private static (double Average, double Min, double Max, double SD) CalculateStats(
-            IReadOnlyCollection<double> values)
-        {
-            double min = values.Min(l => l);
-            double max = values.Max(l => l);
-            double average = values.Average();
-            double sd = Math.Sqrt(1d / values.Count * values.Sum(l => Math.Pow(l - average, 2)));
-
-            return (average, min, max, sd);
-        }
-
-        /// <summary>
-        ///     Calculate the average, min, max and standard deviation of an array of values.
-        /// </summary>
-        /// <param name="values">The array of values to calculate the stats with.</param>
-        /// <returns>A tuple containing the average, min, max and standard deviation of the values.</returns>
-        private static (double, long, long, double) CalculateStats(IReadOnlyCollection<long> values)
-        {
-            long min = values.Min(l => l);
-            long max = values.Max(l => l);
-            double average = values.Average();
-            double sd = Math.Sqrt(1d / values.Count * values.Sum(l => Math.Pow(l - average, 2)));
-
-            return (average, min, max, sd);
         }
 
         /// <summary>
