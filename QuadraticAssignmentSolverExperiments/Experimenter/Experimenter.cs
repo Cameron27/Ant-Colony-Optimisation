@@ -6,7 +6,7 @@ using System.Reflection;
 using BetterConsoleTables;
 using MathNet.Numerics.Statistics;
 
-namespace Experimenter
+namespace QuadraticAssignmentSolver.Experiments.Experimenter
 {
     public static class Experimenter
     {
@@ -103,7 +103,7 @@ namespace Experimenter
                 .Select(s => new ColumnHeader(s))
                 .ToArray();
 
-            
+
             // Create table
             TableConfiguration tc = new TableConfiguration
             {

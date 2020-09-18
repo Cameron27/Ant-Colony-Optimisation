@@ -1,16 +1,12 @@
 using System.Linq;
-using Experimenter;
-using QuadraticAssignmentSolverOptimisation;
+using QuadraticAssignmentSolver.Experiments.Experimenter;
 
-namespace QuadraticAssignmentSolver.Optimisation
+namespace QuadraticAssignmentSolver.Experiments
 {
-    public class SynchronousPerformanceTest : Experiment
+    public class ConcurrentPerformanceTest : Experiment
     {
-        [Parameters(new object[] {"Examples/sko42.dat","Examples/sko49.dat"})]
-        public string Problem ;
-
-        [Parameters(new object[] {1, 2, 3, 4, 5})]
-        public int Threads;
+        [Parameters(new object[] {"Examples/sko42.dat"})]
+        public string Problem;
 
         public override double[] RunExperiment()
         {

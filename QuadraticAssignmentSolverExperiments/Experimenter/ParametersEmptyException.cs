@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Experimenter
+namespace QuadraticAssignmentSolver.Experiments.Experimenter
 {
     public class ParametersEmptyException : Exception
     {

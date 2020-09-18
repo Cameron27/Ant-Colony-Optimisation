@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Experimenter
+namespace QuadraticAssignmentSolver.Experiments.Experimenter
 {
     public abstract class Experiment
     {

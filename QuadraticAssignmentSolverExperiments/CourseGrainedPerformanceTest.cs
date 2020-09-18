@@ -1,10 +1,9 @@
 using System.Linq;
-using Experimenter;
-using QuadraticAssignmentSolverOptimisation;
+using QuadraticAssignmentSolver.Experiments.Experimenter;
 
-namespace QuadraticAssignmentSolver.Optimisation
+namespace QuadraticAssignmentSolver.Experiments
 {
-    public class ConcurrentPerformanceTest : Experiment
+    public class CourseGrainedPerformanceTest : Experiment
     {
         [Parameters(new object[] {"Examples/sko42.dat"})]
         public string Problem;

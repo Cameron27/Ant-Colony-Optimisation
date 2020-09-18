@@ -1,7 +1,6 @@
 ﻿using System;
-using QuadraticAssignmentSolver.Optimisation;
 
-namespace QuadraticAssignmentSolverOptimisation
+namespace QuadraticAssignmentSolver.Experiments
 {
     internal static class Program
     {

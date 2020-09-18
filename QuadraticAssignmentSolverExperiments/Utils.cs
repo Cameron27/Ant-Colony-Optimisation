@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 
-namespace QuadraticAssignmentSolverOptimisation
+namespace QuadraticAssignmentSolver.Experiments
 {
     public static class Utils
     {
-        public static Dictionary<string, double> ProblemTimeDictionary =
+        public static readonly Dictionary<string, double> ProblemTimeDictionary =
             new Dictionary<string, double>(new List<KeyValuePair<string, double>>
             {
                 new KeyValuePair<string, double>("Examples/sko42.dat", 2),

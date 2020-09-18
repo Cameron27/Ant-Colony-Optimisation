@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Experimenter
+namespace QuadraticAssignmentSolver.Experiments.Experimenter
 {
     [AttributeUsage(AttributeTargets.Field)]
     public class ParametersAttribute : Attribute
