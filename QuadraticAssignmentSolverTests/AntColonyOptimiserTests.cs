@@ -11,11 +11,11 @@ namespace QuadraticAssignmentSolver.Tests
         {
             AntColonyOptimiser aco = new AntColonyOptimiser("Examples/nug12.dat");
 
-            Solution result = aco.Search(5, 1,1);
+            Solution result = aco.ConcurrentSearch(5, 1);
 
             result.DisplayResult();
 
-            Solution[] results = aco.Search(5, 1,1, 5);
+            Solution[] results = aco.ConcurrentSearch(5, 1, 5);
             Assert.AreEqual(5, results.Length);
             for (int i = 1; i < results.Length; i++) Assert.IsTrue(results[i - 1].Fitness >= results[i].Fitness);
         }
@@ -38,11 +38,11 @@ namespace QuadraticAssignmentSolver.Tests
         public void SynchronousSearchTest()
         {
             AntColonyOptimiser aco = new AntColonyOptimiser("Examples/nug12.dat");
-        
+
             Solution result = aco.SynchronousSearch(5, 1, Environment.ProcessorCount);
-        
+
             result.DisplayResult();
-            
+
             Solution[] results = aco.SynchronousSearch(5, 1, Environment.ProcessorCount, 5);
             Assert.AreEqual(5, results.Length);
             for (int i = 1; i < results.Length; i++) Assert.IsTrue(results[i - 1].Fitness >= results[i].Fitness);

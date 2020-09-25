@@ -71,7 +71,7 @@ namespace QuadraticAssignmentSolver
                     }
 
                     // Search
-                    result = aco.Search(antCount, runtime, 1);
+                    result = aco.ConcurrentSearch(antCount, runtime);
                     break;
                 case Algorithm.Replicated:
                     // Set default parameters
