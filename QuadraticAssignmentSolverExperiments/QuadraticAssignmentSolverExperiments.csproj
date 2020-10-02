@@ -6,8 +6,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Experimenter\Experimenter.csproj" />
       <ProjectReference Include="..\QuadraticAssignmentSolver\QuadraticAssignmentSolver.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="BetterConsoleTables" Version="1.1.2" />
+      <PackageReference Include="MathNet.Numerics" Version="4.12.0" />
     </ItemGroup>
 
 </Project>

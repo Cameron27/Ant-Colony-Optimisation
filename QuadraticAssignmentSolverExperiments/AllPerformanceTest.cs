@@ -16,11 +16,7 @@ namespace QuadraticAssignmentSolver.Experiments
             Synchronous2,
             Synchronous3,
             Synchronous4,
-            Synchronous5,
-            CourseGrained2,
-            CourseGrained4,
-            CourseGrained6,
-            CourseGrained12
+            Synchronous5
         }
 
         private const int DivisionCount = 10;
@@ -37,10 +33,6 @@ namespace QuadraticAssignmentSolver.Experiments
             TestAlgorithm.Synchronous3,
             TestAlgorithm.Synchronous4,
             TestAlgorithm.Synchronous5
-            // TestAlgorithm.CourseGrained2,
-            // TestAlgorithm.CourseGrained4,
-            // TestAlgorithm.CourseGrained6,
-            // TestAlgorithm.CourseGrained12
         })]
         public TestAlgorithm Algorithm;
 
@@ -85,22 +77,6 @@ namespace QuadraticAssignmentSolver.Experiments
                     .ToArray(),
                 TestAlgorithm.Synchronous5 => new AntColonyOptimiser(Problem)
                     .SynchronousSearch(5, Utils.ProblemTimeDictionary[Problem], 5, DivisionCount)
-                    .Select(s => (double) s.Fitness)
-                    .ToArray(),
-                TestAlgorithm.CourseGrained2 => new AntColonyOptimiser(Problem)
-                    .CourseGrainedSearch(5, Utils.ProblemTimeDictionary[Problem], 2, DivisionCount)
-                    .Select(s => (double) s.Fitness)
-                    .ToArray(),
-                TestAlgorithm.CourseGrained4 => new AntColonyOptimiser(Problem)
-                    .CourseGrainedSearch(5, Utils.ProblemTimeDictionary[Problem], 4, DivisionCount)
-                    .Select(s => (double) s.Fitness)
-                    .ToArray(),
-                TestAlgorithm.CourseGrained6 => new AntColonyOptimiser(Problem)
-                    .CourseGrainedSearch(5, Utils.ProblemTimeDictionary[Problem], 6, DivisionCount)
-                    .Select(s => (double) s.Fitness)
-                    .ToArray(),
-                TestAlgorithm.CourseGrained12 => new AntColonyOptimiser(Problem)
-                    .CourseGrainedSearch(5, Utils.ProblemTimeDictionary[Problem], 12, DivisionCount)
                     .Select(s => (double) s.Fitness)
                     .ToArray(),
                 _ => throw new ArgumentOutOfRangeException()

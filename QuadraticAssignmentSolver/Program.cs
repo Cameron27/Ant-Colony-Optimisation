@@ -1,8 +1,5 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Cocona;
 
 namespace QuadraticAssignmentSolver
@@ -13,8 +10,7 @@ namespace QuadraticAssignmentSolver
         {
             Concurrent,
             Replicated,
-            Synchronous,
-            CourseGrained
+            Synchronous
         }
 
         public static bool UseDefaultParameters = true;
@@ -66,7 +62,7 @@ namespace QuadraticAssignmentSolver
                     {
                         AntColonyOptimiser.FitnessWeight = 1.5;
                         AntColonyOptimiser.PheromoneWeight = 1.5;
-                        PheromoneTable.InitialValue = 5;
+                        PheromoneTable.ProbBest = 0.05;
                         PheromoneTable.EvaporationRate = 0.4;
                     }
 
@@ -79,7 +75,7 @@ namespace QuadraticAssignmentSolver
                     {
                         AntColonyOptimiser.FitnessWeight = 1.5;
                         AntColonyOptimiser.PheromoneWeight = 1.5;
-                        PheromoneTable.InitialValue = 5;
+                        PheromoneTable.ProbBest = 0.05;
                         PheromoneTable.EvaporationRate = 0.4;
                     }
                 
@@ -92,25 +88,12 @@ namespace QuadraticAssignmentSolver
                     {
                         AntColonyOptimiser.FitnessWeight = 1.5;
                         AntColonyOptimiser.PheromoneWeight = 1.5;
-                        PheromoneTable.InitialValue = 5;
+                        PheromoneTable.ProbBest = 0.05;
                         PheromoneTable.EvaporationRate = 0.4;
                     }
                 
                     // Search
                     result = aco.SynchronousSearch(antCount, runtime, (int) threads);
-                    break;
-                case Algorithm.CourseGrained:
-                    // Set default parameters
-                    if (UseDefaultParameters)
-                    {
-                        AntColonyOptimiser.FitnessWeight = 1.5;
-                        AntColonyOptimiser.PheromoneWeight = 1.5;
-                        PheromoneTable.InitialValue = 5;
-                        PheromoneTable.EvaporationRate = 0.4;
-                    }
-                
-                    // Search
-                    result = aco.CourseGrainedSearch(antCount, runtime, (int) threads);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(algorithm), algorithm, null);

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace QuadraticAssignmentSolver
 {
@@ -17,6 +18,11 @@ namespace QuadraticAssignmentSolver
         ///     The exponent for contribution of pheromone.
         /// </summary>
         public static double PheromoneWeight = 1;
+
+        /// <summary>
+        ///     The frequency with which to use the the global best solution to deposit pheromones.
+        /// </summary>
+        public static int GlobalBestDepositFreq = 10;
 
         /// <summary>
         ///     A random object to be used when a source of randomness is needed.
@@ -65,7 +71,7 @@ namespace QuadraticAssignmentSolver
             if (replicatedThreads == 1)
                 globalSolutions[0] = SingleSearch(pheromoneTables[0]);
             else
-                ParallelFor(0, replicatedThreads, replicatedThreads,
+                Parallel.For(0, replicatedThreads, new ParallelOptions {MaxDegreeOfParallelism = replicatedThreads},
                     index => globalSolutions[index] = SingleSearch(pheromoneTables[index]));
 
             return GetBestSolutions(globalSolutions);
@@ -78,22 +84,35 @@ namespace QuadraticAssignmentSolver
                 int currentDivision = 0;
 
                 // While the stop condition has not been reached
+                int iteration = 0;
                 while (true)
                 {
                     // Run ants
-                    IEnumerable<Solution> results = RunAnts(antCount, antThreads, pheromoneTable);
+                    Solution[] results = RunAnts(antCount, antThreads, pheromoneTable).ToArray();
 
                     // Set new best solution
                     if (IsNewBest(results, ref best))
-                        results = results.Append(best);
+                        pheromoneTable.UpdateMaxAndMin(best);
+
 
                     // Deposit pheromones
-                    pheromoneTable.DepositPheromones(results);
+                    // Decide whether to deposit iteration best or global best solution
+                    if (iteration % GlobalBestDepositFreq != 0)
+                    {
+                        Solution iterationBest = results.OrderBy(r => r.Fitness).First();
+                        pheromoneTable.DepositPheromones(iterationBest);
+                    }
+                    else
+                    {
+                        pheromoneTable.DepositPheromones(best);
+                    }
 
                     // Check if divisions have been reached and results need to be saved and end if final result was saved
                     if (StoreSolutions(divisionCount, divisionSize, startTime, bestAtDivisions, best,
                         ref currentDivision))
                         break;
+
+                    iteration++;
                 }
 
                 return bestAtDivisions;
@@ -121,7 +140,7 @@ namespace QuadraticAssignmentSolver
             {
                 // Generate solutions with ants and local search in parallel
                 ConcurrentBag<Solution> results = new ConcurrentBag<Solution>();
-                ParallelFor(0, antCount, antThreads,
+                Parallel.For(0, antCount, new ParallelOptions {MaxDegreeOfParallelism = antCount},
                     _ => results.Add(LocalSearch(ConstructAntSolution(pheromoneTable))));
                 return results;
             }
@@ -156,7 +175,7 @@ namespace QuadraticAssignmentSolver
 
                     // Calculate the fitness diff for each facility if it were to be inserted at the location
                     solution.SetFacility(location, facility);
-                    double fitness = 1d / solution.PartialFitness(location);
+                    double fitness = 1d / (solution.PartialFitness(location) + 1);
 
                     // Get pheromone for facility at that location
                     double pheromone = pheromoneTable.GetPheromones(location, facility);
@@ -443,203 +462,6 @@ namespace QuadraticAssignmentSolver
         public Solution SynchronousSearch(int antCount, double runtime, int threads)
         {
             return SynchronousSearch(antCount, runtime, threads, 1)[0];
-        }
-
-        /// <summary>
-        ///     Perform a search of the solution space using the ACO algorithm multiple times in parallel with information from the
-        ///     pheromone tables being shared between each instance of the search.
-        /// </summary>
-        /// <param name="antCount">The number of ants to use in the search.</param>
-        /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
-        /// <param name="threads">The number of threads to use.</param>
-        /// <param name="divisionCount">
-        ///     The number of points to return the best solution at throughout the search.
-        /// </param>
-        /// <returns>An array of the best solution found at each division, the last solution is the best solution found overall.</returns>
-        public Solution[] CourseGrainedSearch(int antCount, double runtime, int threads, int divisionCount)
-        {
-            // Number of syncs that will be performed between threads
-            const int numOfSyncs = 5;
-
-            ConcurrentBag<Solution[]> globalSolutions = new ConcurrentBag<Solution[]>();
-
-            // Create pheromone tables
-            PheromoneTable[] pheromoneTables = new PheromoneTable[threads];
-            for (int i = 0; i < threads; i++) pheromoneTables[i] = new PheromoneTable(_problem);
-
-            // Create events used for thread synchronisation
-            ManualResetEvent[] synchroniseEvents1 = new ManualResetEvent[threads];
-            ManualResetEvent[] synchroniseEvents2 = new ManualResetEvent[threads];
-            for (int i = 0; i < threads; i++)
-            {
-                synchroniseEvents1[i] = new ManualResetEvent(false);
-                synchroniseEvents2[i] = new ManualResetEvent(false);
-            }
-
-            // Create events used to allow threads to continue once they synchronise
-            AutoResetEvent gateEvent1 = new AutoResetEvent(false);
-            AutoResetEvent gateEvent2 = new AutoResetEvent(false);
-
-            // List of indices of remaining threads used to determine which thread should handle pheromone sharing
-            List<int> remainingThreads = Enumerable.Range(0, threads).ToList();
-
-            // Create supervisor thread
-            bool terminateSupervisor = false;
-            object terminateSupervisorLock = new object();
-            Thread supervisor = new Thread(Supervisor);
-            supervisor.Start();
-
-            // Run search threads in parallel
-            ParallelFor(0, threads, threads, SearchThread);
-
-            // Unset one of synchroniseEvents1 so supervisor will timeout and check for terminateSupervisor being set to
-            // true
-            synchroniseEvents1[0].Reset();
-            lock (terminateSupervisorLock)
-            {
-                terminateSupervisor = true;
-            }
-
-            // Get best results
-            Solution[] bestSolutions = new Solution[divisionCount];
-            int[] bestFitnesses = new int[divisionCount];
-            Array.Fill(bestFitnesses, int.MaxValue);
-            foreach (Solution[] results in globalSolutions)
-                for (int i = 0; i < divisionCount; i++)
-                {
-                    int fitness = results[i].Fitness;
-
-                    if (fitness >= bestFitnesses[i]) continue;
-
-                    bestSolutions[i] = results[i];
-                    bestFitnesses[i] = fitness;
-                }
-
-            return bestSolutions;
-
-            // A method to run as a thread to search the solution space
-            void SearchThread(int index)
-            {
-                Solution best = null;
-                Solution[] bestAtDivisions = new Solution[divisionCount];
-
-                long startTime = DateTime.Now.Ticks;
-                long totalAllowedTime = (long) (runtime * TimeSpan.TicksPerSecond);
-                long divisionSize = totalAllowedTime / divisionCount;
-                int currentDivision = 0;
-                int iterationsRun = 0;
-                int nextPheromoneShareIndex = 1;
-
-                // While the stop condition has not been reached
-                while (true)
-                {
-                    // Run ants
-                    IEnumerable<Solution> results = RunAnts(antCount, threads, pheromoneTables[index]);
-
-                    // Set new best solution
-                    if (IsNewBest(results, ref best))
-                        results = results.Append(best);
-
-                    // Deposit pheromones
-                    pheromoneTables[index].DepositPheromones(results);
-
-                    // Check if divisions have been reached and results need to be saved and end if final result was saved
-                    if (StoreSolutions(divisionCount, divisionSize, startTime, bestAtDivisions, best,
-                        ref currentDivision))
-                        break;
-
-                    iterationsRun++;
-
-
-                    // Sync if enough time has passed
-                    if (DateTime.Now.Ticks - startTime <
-                        nextPheromoneShareIndex * totalAllowedTime / numOfSyncs) continue;
-
-                    nextPheromoneShareIndex++;
-
-                    // Synchronise all running threads at this point
-                    synchroniseEvents1[index].Set();
-                    gateEvent1.WaitOne();
-                    synchroniseEvents1[index].Reset();
-
-                    // Have one thread share pheromone data
-                    if (index == remainingThreads[0])
-                    {
-                        // New pheromones are the max for each index from the pheromone table
-                        double[] newPheromones = new double[_problem.Size * _problem.Size];
-                        foreach (PheromoneTable pheromoneTable in pheromoneTables)
-                        {
-                            double[] pheromones = pheromoneTable.GetAllPheromones();
-                            for (int i = 0; i < pheromones.Length; i++) newPheromones[i] += pheromones[i] / threads;
-                        }
-
-                        // Assign new pheromones
-                        foreach (PheromoneTable pheromoneTable in pheromoneTables)
-                            pheromoneTable.SetAllPheromones(newPheromones);
-                    }
-
-                    // Synchronise all running threads at this point
-                    synchroniseEvents2[index].Set();
-                    gateEvent2.WaitOne();
-                    synchroniseEvents2[index].Reset();
-                }
-
-                // Remove self from and mark as synchronised to allow other threads to continue
-                remainingThreads.Remove(index);
-                synchroniseEvents1[index].Set();
-                synchroniseEvents2[index].Set();
-
-                // Add best result
-                globalSolutions.Add(bestAtDivisions);
-            }
-
-            // A method to run as a thread that will allow each thread to continue when they all reach the
-            // synchronisation points
-            void Supervisor()
-            {
-                while (true)
-                    // Wait for all threads to reach synchronisation point 1
-                    if (WaitHandle.WaitAll(synchroniseEvents1, 100))
-                    {
-                        // Stop access through synchronisation point 2
-                        gateEvent2.Reset();
-
-                        // Let all the threads through synchronisation point 1
-                        for (int i = 0; i < threads; i++) gateEvent1.Set();
-
-                        // Wait for all threads to reach synchronisation point 2
-                        WaitHandle.WaitAll(synchroniseEvents2);
-
-                        // Stop access through synchronisation point 1
-                        gateEvent1.Reset();
-
-                        // Let all the threads through synchronisation point 2
-                        for (int i = 0; i < threads; i++) gateEvent2.Set();
-                    }
-                    else
-                    {
-                        // Check if thread should end
-                        lock (terminateSupervisorLock)
-                        {
-                            if (!terminateSupervisor) continue;
-
-                            return;
-                        }
-                    }
-            }
-        }
-
-        /// <summary>
-        ///     Perform a search of the solution space using the ACO algorithm multiple times in parallel with information from the
-        ///     pheromone tables being shared between each instance of the search.
-        /// </summary>
-        /// <param name="antCount">The number of ants to use in the search.</param>
-        /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
-        /// <param name="threads">The number of threads to use.</param>
-        /// <returns>The best solution found.</returns>
-        public Solution CourseGrainedSearch(int antCount, double runtime, int threads)
-        {
-            return CourseGrainedSearch(antCount, runtime, threads, 1)[0];
         }
 
         /// <summary>

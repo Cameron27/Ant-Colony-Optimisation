@@ -8,35 +8,47 @@ namespace QuadraticAssignmentSolver.Tests
         [TestMethod]
         public void DepositPheromonesTest()
         {
-            Problem p = Problem.CreateFromFile("Examples/nug3.dat");
-            Solution s1 = new Solution(p);
-            s1.SetFacility(0, 0);
-            s1.SetFacility(1, 1);
-            s1.SetFacility(2, 2);
+            Problem p = Problem.CreateFromFile("Examples/nug12.dat");
+            (Solution s1, _) = Solution.CreateFromFile("Examples/nug12.sol", p);
 
-            Assert.AreEqual(s1.Fitness, 24);
-
-            Solution s2 = new Solution(p);
-            s2.SetFacility(0, 0);
-            s2.SetFacility(1, 2);
-            s2.SetFacility(2, 1);
-
-            Assert.AreEqual(s2.Fitness, 30);
+            Assert.AreEqual(s1.Fitness, 578);
 
             PheromoneTable pt = new PheromoneTable(p);
+            PheromoneTable.ProbBest = 0.05;
+            PheromoneTable.EvaporationRate = 0.9;
+
+            pt.UpdateMaxAndMin(s1);
+
+            pt.DepositPheromones(s1);
 
             for (int location = 0; location < p.Size; location++)
             for (int facility = 0; facility < p.Size; facility++)
-                Assert.AreEqual(pt.GetPheromones(location, facility), PheromoneTable.InitialValue);
+                Assert.AreEqual(0.01730103806, pt.GetPheromones(location, facility), 0.00001);
 
-            pt.DepositPheromones(new[] {s1, s2});
+            pt.DepositPheromones(s1);
 
             for (int location = 0; location < p.Size; location++)
             for (int facility = 0; facility < p.Size; facility++)
-                Assert.AreEqual(pt.GetPheromones(location, facility),
-                    PheromoneTable.EvaporationRate * PheromoneTable.InitialValue
-                    + (s1.GetFacility(location) == facility ? 1d / s1.Fitness : 0)
-                    + (s2.GetFacility(location) == facility ? 1d / s2.Fitness : 0));
+                Assert.AreEqual(s1.GetFacility(location) == facility ? 0.01730103806 : 0.01557093425,
+                    pt.GetPheromones(location, facility), 0.00001);
+        }
+
+        [TestMethod]
+        public void UpdateMaxAndMinTest()
+        {
+            Problem p = Problem.CreateFromFile("Examples/nug12.dat");
+            (Solution s1, _) = Solution.CreateFromFile("Examples/nug12.sol", p);
+
+            Assert.AreEqual(s1.Fitness, 578);
+
+            PheromoneTable pt = new PheromoneTable(p);
+            PheromoneTable.ProbBest = 0.05;
+            PheromoneTable.EvaporationRate = 0.9;
+
+            pt.UpdateMaxAndMin(s1);
+
+            Assert.AreEqual(0.01730103806, pt.GetMaxAndMin().Max, 0.00001);
+            Assert.AreEqual(0.000981207066, pt.GetMaxAndMin().Min, 0.0000001);
         }
     }
 }

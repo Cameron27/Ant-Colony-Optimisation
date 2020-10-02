@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace QuadraticAssignmentSolver
@@ -7,14 +6,15 @@ namespace QuadraticAssignmentSolver
     public class PheromoneTable
     {
         /// <summary>
-        ///     The initial pheromone value to use.
-        /// </summary>
-        public static double InitialValue = 0.1;
-
-        /// <summary>
         ///     The portion of pheromone to be carried over in an update.
         /// </summary>
         public static double EvaporationRate = 0.5;
+
+        /// <summary>
+        ///     The approximate probability of generating best know solution if pheromone table has converged and is used to
+        ///     determine what the minimum possible pheromone value should be.
+        /// </summary>
+        public static double ProbBest = 0.05;
 
         /// <summary>
         ///     The problem being solved.
@@ -26,14 +26,27 @@ namespace QuadraticAssignmentSolver
         /// </summary>
         private readonly double[] _table;
 
+        /// <summary>
+        ///     The maximum possible pheromone value.
+        /// </summary>
+        private double _max;
+
+        /// <summary>
+        ///     The minimum possible pheromone value.
+        /// </summary>
+        private double _min;
+
         public PheromoneTable(Problem problem)
         {
             _problem = problem;
-            _table = Enumerable.Repeat(InitialValue, _problem.Size * _problem.Size).ToArray();
+            
+            // Set all values to 0 to indicate pheromones have not been initialised yet, they will be initialised when
+            // first pheromones are deposited
+            _table = Enumerable.Repeat(-1d, _problem.Size * _problem.Size).ToArray();
         }
 
         /// <summary>
-        /// Get the pheromone level for a location and facility.
+        ///     Get the pheromone level for a location and facility.
         /// </summary>
         /// <param name="location">The location to lookup the pheromone for.</param>
         /// <param name="facility">The facility to lookup the pheromone for.</param>
@@ -42,59 +55,73 @@ namespace QuadraticAssignmentSolver
         {
             return _table[location * _problem.Size + facility];
         }
-        
+
         public double[] GetAllPheromones()
         {
             return _table;
         }
-        
+
         public void SetAllPheromones(double[] pheromones)
         {
             Array.Copy(pheromones, _table, pheromones.Length);
         }
 
         /// <summary>
-        /// Update the pheromone values based on provided solutions.
+        ///     Update the pheromone values based on provided solutions.
         /// </summary>
-        /// <param name="solutions">The solutions to use to update pheromones.</param>
-        public void DepositPheromones(IEnumerable<Solution> solutions)
+        /// <param name="solution">The solution to use to update pheromones.</param>
+        public void DepositPheromones(Solution solution)
         {
-            // Calculate the amount to be deposited at each location
-            double[] depositAmounts = CalculateDepositAmounts(solutions);
+            // If this is first update set all values to max
+            if (_table[0] < 0)
+            {
+                Array.Fill(_table, _max);
+                return;
+            }
 
             // For each location and facility calculate new pheromone level
             for (int location = 0; location < _problem.Size; location++)
-            for (int facility = 0; facility < _problem.Size; facility++)
-                _table[location * _problem.Size + facility] =
-                    EvaporationRate * _table[location * _problem.Size + facility]
-                    + depositAmounts[location * _problem.Size + facility];
+            {
+                int facilityAtLocation = solution.GetFacility(location);
+                for (int facility = 0; facility < _problem.Size; facility++)
+                {
+                    // Update pheromones
+                    _table[location * _problem.Size + facility] =
+                        EvaporationRate * _table[location * _problem.Size + facility]
+                        + (facilityAtLocation == facility ? 1d / solution.Fitness : 0);
+
+                    // Clamp between min and max
+                    _table[location * _problem.Size + facility] =
+                        Math.Clamp(_table[location * _problem.Size + facility], _min, _max);
+                }
+            }
         }
 
         /// <summary>
-        /// Calculate the amount of pheromones to deposit at each location based on provided solutions. 
+        ///     Update the maximum and minimum possible pheromone values based on best known solution.
         /// </summary>
-        /// <param name="solutions">The solutions to use to calculate the amount of pheromones to deposit.</param>
-        /// <returns>The amount of pheromones to deposit at each location.</returns>
-        private double[] CalculateDepositAmounts(IEnumerable<Solution> solutions)
+        /// <param name="best">The current best known solution.</param>
+        public void UpdateMaxAndMin(Solution best)
         {
-            double[] depositAmounts = new double[_problem.Size * _problem.Size];
+            // Set max as the asymptote that would be reached if the best solution were to be deposited repeatedly
+            _max = 1d / (1d - EvaporationRate) * (1d / best.Fitness);
 
-            // For each solution
-            foreach (Solution solution in solutions)
-            {
-                // Calculate pheromone amount based on quality of solution 
-                double pheromoneAmount = 1d / solution.Fitness;
+            // Set the min such that an ant would have ProbBest chance of generating the best solution if the search has
+            // converged
+            double pDec = Math.Pow(ProbBest, 1d / best.Size);
+            _min = _max * (1 - pDec) / ((best.Size / 2d - 1) * pDec);
 
-                // For each location add pheromone amount based on the facility at that location
-                for (int location = 0; location < _problem.Size; location++)
-                {
-                    int facility = solution.GetFacility(location);
+            // Check min is less than max
+            if (_min > _max) _min = _max;
+        }
 
-                    depositAmounts[location * _problem.Size + facility] += pheromoneAmount;
-                }
-            }
-
-            return depositAmounts;
+        /// <summary>
+        ///     Get the maximum and minimum possible pheromone values.
+        /// </summary>
+        /// <returns>The maximum and minimum possible pheromone values.</returns>
+        public (double Max, double Min) GetMaxAndMin()
+        {
+            return (_max, _min);
         }
     }
 }

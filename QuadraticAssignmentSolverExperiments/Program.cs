@@ -23,9 +23,6 @@ namespace QuadraticAssignmentSolver.Experiments
                 case "synchronous_performance":
                     new SynchronousPerformanceTest().Run();
                     break;
-                case "course_grained_performance":
-                    new CourseGrainedPerformanceTest().Run();
-                    break;
                 case "all_performance":
                     new AllPerformanceTest().Run();
                     break;
