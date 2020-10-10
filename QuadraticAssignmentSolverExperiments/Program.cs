@@ -23,6 +23,9 @@ namespace QuadraticAssignmentSolver.Experiments
                 case "synchronous_performance":
                     new SynchronousPerformanceTest().Run();
                     break;
+                case "cooperative_performance":
+                    new CooperativePerformanceTest().Run();
+                    break;
                 case "all_performance":
                     new AllPerformanceTest().Run();
                     break;

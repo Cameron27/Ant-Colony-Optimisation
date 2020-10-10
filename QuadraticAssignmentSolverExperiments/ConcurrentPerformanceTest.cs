@@ -40,7 +40,7 @@ namespace QuadraticAssignmentSolver.Experiments
 
         public void Run()
         {
-            Experimenter.Experimenter.RunExperiment(this, 10);
+            Experimenter.Experimenter.RunExperiment(this, 50);
         }
     }
 }

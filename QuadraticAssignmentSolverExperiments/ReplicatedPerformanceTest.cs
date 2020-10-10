@@ -5,7 +5,7 @@ namespace QuadraticAssignmentSolver.Experiments
 {
     public class ReplicatedPerformanceTest : Experiment
     {
-        [Parameters(new object[] {"Examples/sko42.dat"})]
+        [Parameters(new object[] {"Examples/sko49.dat"})]
         public string Problem;
 
         public override double[] RunExperiment()

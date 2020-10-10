@@ -5,7 +5,7 @@ namespace QuadraticAssignmentSolver.Experiments
 {
     public class SynchronousPerformanceTest : Experiment
     {
-        [Parameters(new object[] {"Examples/sko42.dat", "Examples/sko49.dat"})]
+        [Parameters(new object[] {"Examples/sko49.dat"})]
         public string Problem;
 
         [Parameters(new object[] {1, 2, 3, 4, 5})]

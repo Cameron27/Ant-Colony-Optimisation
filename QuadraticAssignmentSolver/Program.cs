@@ -10,7 +10,8 @@ namespace QuadraticAssignmentSolver
         {
             Concurrent,
             Replicated,
-            Synchronous
+            Synchronous,
+            Cooperative
         }
 
         public static bool UseDefaultParameters = true;
@@ -52,52 +53,16 @@ namespace QuadraticAssignmentSolver
                 return;
             }
 
-            Solution result;
             // Select algorithm
-            switch (algorithm)
+            Solution result = algorithm switch
             {
-                case Algorithm.Concurrent:
-                    // Set default parameters
-                    if (UseDefaultParameters)
-                    {
-                        AntColonyOptimiser.FitnessWeight = 1.5;
-                        AntColonyOptimiser.PheromoneWeight = 1.5;
-                        PheromoneTable.ProbBest = 0.05;
-                        PheromoneTable.EvaporationRate = 0.4;
-                    }
-
-                    // Search
-                    result = aco.ConcurrentSearch(antCount, runtime);
-                    break;
-                case Algorithm.Replicated:
-                    // Set default parameters
-                    if (UseDefaultParameters)
-                    {
-                        AntColonyOptimiser.FitnessWeight = 1.5;
-                        AntColonyOptimiser.PheromoneWeight = 1.5;
-                        PheromoneTable.ProbBest = 0.05;
-                        PheromoneTable.EvaporationRate = 0.4;
-                    }
-                
-                    // Search
-                    result = aco.ReplicatedSearch(antCount, runtime, (int) threads);
-                    break;
-                case Algorithm.Synchronous:
-                    // Set default parameters
-                    if (UseDefaultParameters)
-                    {
-                        AntColonyOptimiser.FitnessWeight = 1.5;
-                        AntColonyOptimiser.PheromoneWeight = 1.5;
-                        PheromoneTable.ProbBest = 0.05;
-                        PheromoneTable.EvaporationRate = 0.4;
-                    }
-                
-                    // Search
-                    result = aco.SynchronousSearch(antCount, runtime, (int) threads);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(algorithm), algorithm, null);
-            }
+                Algorithm.Concurrent => aco.ConcurrentSearch(antCount, runtime),
+                Algorithm.Replicated => aco.ReplicatedSearch(antCount, runtime, (int) threads),
+                Algorithm.Synchronous => aco.SynchronousSearch(antCount, runtime, (int) threads),
+                // TODO: make share count changeable
+                Algorithm.Cooperative => aco.CooperativeSearch(antCount, runtime, 10, (int) threads),
+                _ => throw new ArgumentOutOfRangeException(nameof(algorithm), algorithm, null)
+            };
 
             result.DisplayResult();
         }
