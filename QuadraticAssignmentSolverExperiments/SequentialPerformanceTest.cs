@@ -3,7 +3,7 @@ using QuadraticAssignmentSolver.Experiments.Experimenter;
 
 namespace QuadraticAssignmentSolver.Experiments
 {
-    public class ConcurrentPerformanceTest : Experiment
+    public class SequentialPerformanceTest : Experiment
     {
         // [Parameters(new object[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10})]
         public int AntCount = 5;
@@ -34,7 +34,7 @@ namespace QuadraticAssignmentSolver.Experiments
             AntColonyOptimiser.FitnessWeight = FitnessWeight;
             AntColonyOptimiser.GlobalBestDepositFreq = GlobalBestDepositFreq;
             return new AntColonyOptimiser(Problem)
-                .ConcurrentSearch(5, Utils.ProblemTimeDictionary[Problem], 10)
+                .SequentialSearch(5, Utils.ProblemTimeDictionary[Problem], 10)
                 .Select(s => (double) s.Fitness).ToArray();
         }
 

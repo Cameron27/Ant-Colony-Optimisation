@@ -8,7 +8,7 @@ namespace QuadraticAssignmentSolver.Experiments
     {
         public enum TestAlgorithm
         {
-            Concurrent,
+            Sequential,
             Replicated2,
             Replicated4,
             Replicated6,
@@ -24,11 +24,11 @@ namespace QuadraticAssignmentSolver.Experiments
         }
 
         private const int DivisionCount = 10;
-        private const int Iterations = 100;
+        private const int Iterations = 50;
 
         [Parameters(new object[]
         {
-            TestAlgorithm.Concurrent,
+            TestAlgorithm.Sequential,
             TestAlgorithm.Replicated2,
             TestAlgorithm.Replicated4,
             TestAlgorithm.Replicated6,
@@ -56,8 +56,8 @@ namespace QuadraticAssignmentSolver.Experiments
         {
             double[] result = Algorithm switch
             {
-                TestAlgorithm.Concurrent => new AntColonyOptimiser(Problem)
-                    .ConcurrentSearch(5, Utils.ProblemTimeDictionary[Problem], DivisionCount)
+                TestAlgorithm.Sequential => new AntColonyOptimiser(Problem)
+                    .SequentialSearch(5, Utils.ProblemTimeDictionary[Problem], DivisionCount)
                     .Select(s => (double) s.Fitness)
                     .ToArray(),
                 TestAlgorithm.Replicated2 => new AntColonyOptimiser(Problem)

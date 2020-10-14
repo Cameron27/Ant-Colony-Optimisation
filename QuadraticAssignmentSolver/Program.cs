@@ -8,7 +8,7 @@ namespace QuadraticAssignmentSolver
     {
         public enum Algorithm
         {
-            Concurrent,
+            Sequential,
             Replicated,
             Synchronous,
             Cooperative
@@ -25,7 +25,7 @@ namespace QuadraticAssignmentSolver
         public void Run([Argument(Description = "File containing problem.")]
             string file,
             [Option('a', Description = "Algorithm to use")]
-            Algorithm algorithm = Algorithm.Concurrent,
+            Algorithm algorithm = Algorithm.Sequential,
             [Option('c', Description = "Number of ants per iteration", ValueName = "1..100")] [Range(1, 100)]
             int antCount = 5,
             [Option('s', Description = "The length of time to run the search for",
@@ -56,7 +56,7 @@ namespace QuadraticAssignmentSolver
             // Select algorithm
             Solution result = algorithm switch
             {
-                Algorithm.Concurrent => aco.ConcurrentSearch(antCount, runtime),
+                Algorithm.Sequential => aco.SequentialSearch(antCount, runtime),
                 Algorithm.Replicated => aco.ReplicatedSearch(antCount, runtime, (int) threads),
                 Algorithm.Synchronous => aco.SynchronousSearch(antCount, runtime, (int) threads),
                 // TODO: make share count changeable

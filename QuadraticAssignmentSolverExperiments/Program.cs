@@ -14,8 +14,8 @@ namespace QuadraticAssignmentSolver.Experiments
 
             switch (args[0].ToLower())
             {
-                case "concurrent_performance":
-                    new ConcurrentPerformanceTest().Run();
+                case "sequential_performance":
+                    new SequentialPerformanceTest().Run();
                     break;
                 case "replicated_performance":
                     new ReplicatedPerformanceTest().Run();
