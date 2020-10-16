@@ -15,13 +15,13 @@ namespace QuadraticAssignmentSolver.Experiments
         public override double[] RunExperiment()
         {
             return new AntColonyOptimiser(Problem)
-                .CooperativeSearch(5, Utils.ProblemTimeDictionary[Problem], 4, shareCount, 10)
+                .CooperativeSearch(5, Utils.ProblemTimeDictionary[Problem], 4, shareCount, 1)
                 .Select(s => (double) s.Fitness).ToArray();
         }
 
         public void Run()
         {
-            Experimenter.Experimenter.RunExperiment(this, 50, "cooperativeResults");
+            Experimenter.Experimenter.RunExperiment(this, 50);
         }
     }
 }

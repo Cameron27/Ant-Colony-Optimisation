@@ -34,7 +34,7 @@ namespace QuadraticAssignmentSolver.Experiments
             AntColonyOptimiser.FitnessWeight = FitnessWeight;
             AntColonyOptimiser.GlobalBestDepositFreq = GlobalBestDepositFreq;
             return new AntColonyOptimiser(Problem)
-                .SequentialSearch(5, Utils.ProblemTimeDictionary[Problem], 10)
+                .SequentialSearch(5, Utils.ProblemTimeDictionary[Problem], 1)
                 .Select(s => (double) s.Fitness).ToArray();
         }
 

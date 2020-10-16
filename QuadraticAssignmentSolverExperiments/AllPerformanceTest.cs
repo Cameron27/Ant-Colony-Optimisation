@@ -45,11 +45,7 @@ namespace QuadraticAssignmentSolver.Experiments
         public TestAlgorithm Algorithm;
 
         [Parameters(
-            new object[]
-            {
-                "Examples/sko49.dat", "Examples/sko64.dat", "Examples/sko81.dat", "Examples/sko100a.dat",
-                "Examples/sko100b.dat"
-            }, 1)]
+            new object[] {"Examples/sko49.dat", "Examples/sko64.dat", "Examples/sko81.dat", "Examples/sko100a.dat"}, 1)]
         public string Problem;
 
         public override double[] RunExperiment()
