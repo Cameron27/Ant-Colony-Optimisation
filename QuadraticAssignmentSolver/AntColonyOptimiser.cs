@@ -12,7 +12,7 @@ namespace QuadraticAssignmentSolver
         /// <summary>
         ///     The exponent for contribution of fitness.
         /// </summary>
-        public static double FitnessWeight = 1;
+        public static double FitnessWeight = 3;
 
         /// <summary>
         ///     The exponent for contribution of pheromone.
@@ -22,7 +22,7 @@ namespace QuadraticAssignmentSolver
         /// <summary>
         ///     The frequency with which to use the the global best solution to deposit pheromones.
         /// </summary>
-        public static int GlobalBestDepositFreq = 10;
+        public static int GlobalBestDepositFreq = 16;
 
         /// <summary>
         ///     A random object to be used when a source of randomness is needed.

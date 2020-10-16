@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 
 namespace QuadraticAssignmentSolver
@@ -8,13 +8,13 @@ namespace QuadraticAssignmentSolver
         /// <summary>
         ///     The portion of pheromone to be carried over in an update.
         /// </summary>
-        public static double EvaporationRate = 0.5;
+        public static double EvaporationRate = 0.6;
 
         /// <summary>
         ///     The approximate probability of generating best know solution if pheromone table has converged and is used to
         ///     determine what the minimum possible pheromone value should be.
         /// </summary>
-        public static double ProbBest = 0.05;
+        public static double ProbBest = 0.1;
 
         /// <summary>
         ///     The problem being solved.
