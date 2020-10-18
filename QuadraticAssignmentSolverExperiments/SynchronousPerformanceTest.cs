@@ -6,15 +6,12 @@ namespace QuadraticAssignmentSolver.Experiments
     public class SynchronousPerformanceTest : Experiment
     {
         [Parameters(new object[] {"Examples/sko49.dat"})]
-        public string Problem;
-
-        [Parameters(new object[] {1, 2, 3, 4, 5})]
-        public int Threads;
-
+        public string Problem; 
+        
         public override double[] RunExperiment()
         {
-            return new AntColonyOptimiser(Problem)
-                .SynchronousSearch(5, Utils.ProblemTimeDictionary[Problem], Threads, 1)
+            return new AntColonyOptimiser(Problem, AntColonyOptimiser.Algorithm.Synchronous)
+                .SynchronousSearch(5, Utils.ProblemTimeDictionary[Problem], 4, 1)
                 .Select(s => (double) s.Fitness).ToArray();
         }
 

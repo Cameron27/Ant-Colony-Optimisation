@@ -9,20 +9,13 @@ namespace QuadraticAssignmentSolver
 {
     public class AntColonyOptimiser
     {
-        /// <summary>
-        ///     The exponent for contribution of fitness.
-        /// </summary>
-        public static double FitnessWeight = 3;
-
-        /// <summary>
-        ///     The exponent for contribution of pheromone.
-        /// </summary>
-        public static double PheromoneWeight = 1;
-
-        /// <summary>
-        ///     The frequency with which to use the the global best solution to deposit pheromones.
-        /// </summary>
-        public static int GlobalBestDepositFreq = 16;
+        public enum Algorithm
+        {
+            Sequential,
+            Replicated,
+            Synchronous,
+            Cooperative
+        }
 
         /// <summary>
         ///     A random object to be used when a source of randomness is needed.
@@ -35,12 +28,72 @@ namespace QuadraticAssignmentSolver
         private readonly Problem _problem;
 
         /// <summary>
+        ///     The portion of pheromone to be carried over in an update.
+        /// </summary>
+        public double EvaporationRate;
+
+        /// <summary>
+        ///     The exponent for contribution of fitness.
+        /// </summary>
+        public double FitnessWeight;
+
+        /// <summary>
+        ///     The frequency with which to use the the global best solution to deposit pheromones.
+        /// </summary>
+        public int GlobalBestDepositFreq;
+
+        /// <summary>
+        ///     The exponent for contribution of pheromone.
+        /// </summary>
+        public double PheromoneWeight;
+
+        /// <summary>
+        ///     The approximate probability of generating best know solution if pheromone table has converged and is used to
+        ///     determine what the minimum possible pheromone value should be.
+        /// </summary>
+        public double ProbBest;
+
+        /// <summary>
         ///     Initialise a new instance of the <code>AntColonyOptimiser</code> class for a specific problem.
         /// </summary>
         /// <param name="filename">The file containing the problem to be solved.</param>
-        public AntColonyOptimiser(string filename)
+        /// <param name="parameters">The algorithm's default parameters to use.</param>
+        public AntColonyOptimiser(string filename, Algorithm parameters = Algorithm.Sequential)
         {
             _problem = Problem.CreateFromFile(filename);
+
+            // Set parameters
+            switch (parameters)
+            {
+                case Algorithm.Sequential:
+                    PheromoneWeight = 1;
+                    FitnessWeight = 3;
+                    GlobalBestDepositFreq = 16;
+                    EvaporationRate = 0.5;
+                    ProbBest = 0.1;
+                    break;
+                case Algorithm.Replicated:
+                    PheromoneWeight = 1;
+                    FitnessWeight = 3;
+                    GlobalBestDepositFreq = 12;
+                    EvaporationRate = 0.6;
+                    ProbBest = 0.06;
+                    break;
+                case Algorithm.Synchronous:
+                    PheromoneWeight = 1;
+                    FitnessWeight = 3;
+                    GlobalBestDepositFreq = 14;
+                    EvaporationRate = 0.7;
+                    ProbBest = 0.08;
+                    break;
+                case Algorithm.Cooperative:
+                    PheromoneWeight = 1;
+                    FitnessWeight = 3;
+                    GlobalBestDepositFreq = 14;
+                    EvaporationRate = 0.3;
+                    ProbBest = 0.08;
+                    break;
+            }
         }
 
         /// <summary>
@@ -66,7 +119,8 @@ namespace QuadraticAssignmentSolver
 
             // Create pheromone tables
             PheromoneTable[] pheromoneTables = new PheromoneTable[replicatedThreads];
-            for (int i = 0; i < pheromoneTables.Length; i++) pheromoneTables[i] = new PheromoneTable(_problem);
+            for (int i = 0; i < pheromoneTables.Length; i++)
+                pheromoneTables[i] = new PheromoneTable(_problem, EvaporationRate, ProbBest);
 
             // Calculate some values
             long totalAllowedTime = (long) (runtime * TimeSpan.TicksPerSecond);

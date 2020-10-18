@@ -29,6 +29,9 @@ namespace QuadraticAssignmentSolver.Experiments
                 case "all_performance":
                     new AllPerformanceTest().Run();
                     break;
+                case "optimisation":
+                    new Optimisation().Run();
+                    break;
                 default:
                     Console.Error.WriteLine("Argument is invalid.");
                     break;

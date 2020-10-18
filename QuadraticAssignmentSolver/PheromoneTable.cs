@@ -8,13 +8,13 @@ namespace QuadraticAssignmentSolver
         /// <summary>
         ///     The portion of pheromone to be carried over in an update.
         /// </summary>
-        public static double EvaporationRate = 0.6;
+        public double EvaporationRate;
 
         /// <summary>
         ///     The approximate probability of generating best know solution if pheromone table has converged and is used to
         ///     determine what the minimum possible pheromone value should be.
         /// </summary>
-        public static double ProbBest = 0.1;
+        public double ProbBest;
 
         /// <summary>
         ///     The problem being solved.
@@ -36,13 +36,16 @@ namespace QuadraticAssignmentSolver
         /// </summary>
         private double _min;
 
-        public PheromoneTable(Problem problem)
+        public PheromoneTable(Problem problem, double evaporationRate, double probBest)
         {
             _problem = problem;
             
             // Set all values to 0 to indicate pheromones have not been initialised yet, they will be initialised when
             // first pheromones are deposited
             _table = Enumerable.Repeat(-1d, _problem.Size * _problem.Size).ToArray();
+
+            EvaporationRate = evaporationRate;
+            ProbBest = probBest;
         }
 
         /// <summary>

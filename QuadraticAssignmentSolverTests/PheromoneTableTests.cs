@@ -13,9 +13,7 @@ namespace QuadraticAssignmentSolver.Tests
 
             Assert.AreEqual(s1.Fitness, 578);
 
-            PheromoneTable pt = new PheromoneTable(p);
-            PheromoneTable.ProbBest = 0.05;
-            PheromoneTable.EvaporationRate = 0.9;
+            PheromoneTable pt = new PheromoneTable(p, 0.9, 0.05);
 
             pt.UpdateMaxAndMin(s1);
 
@@ -41,9 +39,7 @@ namespace QuadraticAssignmentSolver.Tests
 
             Assert.AreEqual(s1.Fitness, 578);
 
-            PheromoneTable pt = new PheromoneTable(p);
-            PheromoneTable.ProbBest = 0.05;
-            PheromoneTable.EvaporationRate = 0.9;
+            PheromoneTable pt = new PheromoneTable(p, 0.9, 0.05);
 
             pt.UpdateMaxAndMin(s1);
 

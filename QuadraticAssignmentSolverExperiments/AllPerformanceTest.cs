@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using QuadraticAssignmentSolver.Experiments.Experimenter;
 
 namespace QuadraticAssignmentSolver.Experiments
@@ -23,8 +24,8 @@ namespace QuadraticAssignmentSolver.Experiments
             Cooperative12
         }
 
-        private const int DivisionCount = 10;
-        private const int Iterations = 50;
+        private const int DivisionCount = 20;
+        private const int Iterations = 30;
 
         [Parameters(new object[]
         {
@@ -56,19 +57,19 @@ namespace QuadraticAssignmentSolver.Experiments
                     .SequentialSearch(5, Utils.ProblemTimeDictionary[Problem], DivisionCount)
                     .Select(s => (double) s.Fitness)
                     .ToArray(),
-                TestAlgorithm.Replicated2 => new AntColonyOptimiser(Problem)
+                TestAlgorithm.Replicated2 => new AntColonyOptimiser(Problem, AntColonyOptimiser.Algorithm.Replicated)
                     .ReplicatedSearch(5, Utils.ProblemTimeDictionary[Problem], 2, DivisionCount)
                     .Select(s => (double) s.Fitness)
                     .ToArray(),
-                TestAlgorithm.Replicated4 => new AntColonyOptimiser(Problem)
+                TestAlgorithm.Replicated4 => new AntColonyOptimiser(Problem, AntColonyOptimiser.Algorithm.Replicated)
                     .ReplicatedSearch(5, Utils.ProblemTimeDictionary[Problem], 4, DivisionCount)
                     .Select(s => (double) s.Fitness)
                     .ToArray(),
-                TestAlgorithm.Replicated6 => new AntColonyOptimiser(Problem)
+                TestAlgorithm.Replicated6 => new AntColonyOptimiser(Problem, AntColonyOptimiser.Algorithm.Replicated)
                     .ReplicatedSearch(5, Utils.ProblemTimeDictionary[Problem], 6, DivisionCount)
                     .Select(s => (double) s.Fitness)
                     .ToArray(),
-                TestAlgorithm.Replicated12 => new AntColonyOptimiser(Problem)
+                TestAlgorithm.Replicated12 => new AntColonyOptimiser(Problem, AntColonyOptimiser.Algorithm.Replicated)
                     .ReplicatedSearch(5, Utils.ProblemTimeDictionary[Problem], 12, DivisionCount)
                     .Select(s => (double) s.Fitness)
                     .ToArray(),
@@ -88,20 +89,20 @@ namespace QuadraticAssignmentSolver.Experiments
                     .SynchronousSearch(5, Utils.ProblemTimeDictionary[Problem], 12, DivisionCount)
                     .Select(s => (double) s.Fitness)
                     .ToArray(),
-                TestAlgorithm.Cooperative2 => new AntColonyOptimiser(Problem)
-                    .CooperativeSearch(5, Utils.ProblemTimeDictionary[Problem], 2, 10, DivisionCount)
+                TestAlgorithm.Cooperative2 => new AntColonyOptimiser(Problem, AntColonyOptimiser.Algorithm.Cooperative)
+                    .CooperativeSearch(5, Utils.ProblemTimeDictionary[Problem], 2, 15, DivisionCount)
                     .Select(s => (double) s.Fitness)
                     .ToArray(),
-                TestAlgorithm.Cooperative4 => new AntColonyOptimiser(Problem)
-                    .CooperativeSearch(5, Utils.ProblemTimeDictionary[Problem], 4, 10, DivisionCount)
+                TestAlgorithm.Cooperative4 => new AntColonyOptimiser(Problem, AntColonyOptimiser.Algorithm.Cooperative)
+                    .CooperativeSearch(5, Utils.ProblemTimeDictionary[Problem], 4, 15, DivisionCount)
                     .Select(s => (double) s.Fitness)
                     .ToArray(),
-                TestAlgorithm.Cooperative6 => new AntColonyOptimiser(Problem)
-                    .CooperativeSearch(5, Utils.ProblemTimeDictionary[Problem], 6, 10, DivisionCount)
+                TestAlgorithm.Cooperative6 => new AntColonyOptimiser(Problem, AntColonyOptimiser.Algorithm.Cooperative)
+                    .CooperativeSearch(5, Utils.ProblemTimeDictionary[Problem], 6, 15, DivisionCount)
                     .Select(s => (double) s.Fitness)
                     .ToArray(),
-                TestAlgorithm.Cooperative12 => new AntColonyOptimiser(Problem)
-                    .CooperativeSearch(5, Utils.ProblemTimeDictionary[Problem], 12, 10, DivisionCount)
+                TestAlgorithm.Cooperative12 => new AntColonyOptimiser(Problem, AntColonyOptimiser.Algorithm.Cooperative)
+                    .CooperativeSearch(5, Utils.ProblemTimeDictionary[Problem], 12, 15, DivisionCount)
                     .Select(s => (double) s.Fitness)
                     .ToArray(),
                 _ => throw new ArgumentOutOfRangeException()
@@ -112,6 +113,7 @@ namespace QuadraticAssignmentSolver.Experiments
 
         public void Run()
         {
+            Thread.Sleep(20000);
             Experimenter.Experimenter.RunExperiment(this, Iterations, "all.results");
         }
     }

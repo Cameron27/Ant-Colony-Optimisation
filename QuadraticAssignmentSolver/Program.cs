@@ -6,14 +6,6 @@ namespace QuadraticAssignmentSolver
 {
     public class Program
     {
-        public enum Algorithm
-        {
-            Sequential,
-            Replicated,
-            Synchronous,
-            Cooperative
-        }
-
         public static bool UseDefaultParameters = true;
 
         public static void Main(string[] args)
@@ -25,7 +17,7 @@ namespace QuadraticAssignmentSolver
         public void Run([Argument(Description = "File containing problem.")]
             string file,
             [Option('a', Description = "Algorithm to use")]
-            Algorithm algorithm = Algorithm.Sequential,
+            AntColonyOptimiser.Algorithm algorithm = AntColonyOptimiser.Algorithm.Sequential,
             [Option('c', Description = "Number of ants per iteration", ValueName = "1..100")] [Range(1, 100)]
             int antCount = 5,
             [Option('s', Description = "The length of time to run the search for",
@@ -45,7 +37,7 @@ namespace QuadraticAssignmentSolver
             AntColonyOptimiser aco;
             try
             {
-                aco = new AntColonyOptimiser(file);
+                aco = new AntColonyOptimiser(file, algorithm);
             }
             catch (Exception e)
             {
@@ -56,11 +48,10 @@ namespace QuadraticAssignmentSolver
             // Select algorithm
             Solution result = algorithm switch
             {
-                Algorithm.Sequential => aco.SequentialSearch(antCount, runtime),
-                Algorithm.Replicated => aco.ReplicatedSearch(antCount, runtime, (int) threads),
-                Algorithm.Synchronous => aco.SynchronousSearch(antCount, runtime, (int) threads),
-                // TODO: make share count changeable
-                Algorithm.Cooperative => aco.CooperativeSearch(antCount, runtime, 10, (int) threads),
+                AntColonyOptimiser.Algorithm.Sequential => aco.SequentialSearch(antCount, runtime),
+                AntColonyOptimiser.Algorithm.Replicated => aco.ReplicatedSearch(antCount, runtime, (int) threads),
+                AntColonyOptimiser.Algorithm.Synchronous => aco.SynchronousSearch(antCount, runtime, (int) threads),
+                AntColonyOptimiser.Algorithm.Cooperative => aco.CooperativeSearch(antCount, runtime, 15, (int) threads),
                 _ => throw new ArgumentOutOfRangeException(nameof(algorithm), algorithm, null)
             };
 
