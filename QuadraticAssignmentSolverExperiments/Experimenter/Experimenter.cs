@@ -47,6 +47,7 @@ namespace QuadraticAssignmentSolver.Experiments.Experimenter
             }
 
             // Count up indices while all combinations have not been done
+            int numResultsPerRun =0;
             while (parameterIndices[^1] != fieldParameterCounts[^1])
             {
                 List<object> result = new List<object>();
@@ -72,6 +73,7 @@ namespace QuadraticAssignmentSolver.Experiments.Experimenter
                     scores[i] = instance.RunExperiment();
                 }
 
+                numResultsPerRun = scores[0].Length;
                 scores = Rotate(scores);
 
                 object[] stats = scores.SelectMany(array => new object[]
@@ -99,7 +101,7 @@ namespace QuadraticAssignmentSolver.Experiments.Experimenter
                 .Select(fp => fp.Field.Name)
                 .Reverse()
                 .Union(
-                    Enumerable.Range(0, results[0].Length / 4)
+                    Enumerable.Range(0, numResultsPerRun)
                         .SelectMany(i =>
                             meanOnly ? new[] {"Mean " + i} : new[] {"Mean " + i, "Min " + i, "Max " + i, "SD " + i})
                 )
