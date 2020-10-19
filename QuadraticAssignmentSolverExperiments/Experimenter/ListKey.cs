@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// CameronSalisbury_1293897
+
+using System.Collections.Generic;
 
 namespace QuadraticAssignmentSolver.Experiments.Experimenter
 {

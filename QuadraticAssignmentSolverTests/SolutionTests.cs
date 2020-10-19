@@ -1,4 +1,6 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿// CameronSalisbury_1293897
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace QuadraticAssignmentSolver.Tests
 {

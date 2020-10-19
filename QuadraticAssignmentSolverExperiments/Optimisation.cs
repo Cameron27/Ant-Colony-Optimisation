@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿// CameronSalisbury_1293897
+
+using System.Linq;
 using QuadraticAssignmentSolver.Experiments.Experimenter;
 
 namespace QuadraticAssignmentSolver.Experiments
