@@ -226,7 +226,7 @@ namespace QuadraticAssignmentSolver
             {
                 // Generate solutions with ants and local search in parallel
                 ConcurrentBag<Solution> results = new ConcurrentBag<Solution>();
-                Parallel.For(0, antCount, new ParallelOptions {MaxDegreeOfParallelism = antCount},
+                Parallel.For(0, antCount, new ParallelOptions {MaxDegreeOfParallelism = antThreads},
                     _ => results.Add(LocalSearch(ConstructAntSolution(pheromoneTable))));
                 return results;
             }
