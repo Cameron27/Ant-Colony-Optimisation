@@ -105,9 +105,12 @@ namespace QuadraticAssignmentSolver
         /// <param name="replicatedThreads">The number of threads to use to run multiple copies of the search.</param>
         /// <param name="divisionCount">The number of points to return the best solution at throughout the search.</param>
         /// <param name="shareCount">The number of times different search threads should share information.</param>
-        /// <returns>An array of the best solution found at each division, the last solution is the best solution found overall.</returns>
-        private Solution[] Search(int antCount, double runtime, int divisionCount, int antThreads = 1,
-            int replicatedThreads = 1, int shareCount = 0)
+        /// <returns>
+        ///     An array of the best solution found at each division, the last solution is the best solution found overall,
+        ///     and the average number of iterations for each thread.
+        /// </returns>
+        private (Solution[] Solutions, double Iterations) Search(int antCount, double runtime, int divisionCount,
+            int antThreads = 1, int replicatedThreads = 1, int shareCount = 0)
         {
             // Get start time
             long startTime = DateTime.Now.Ticks;
@@ -132,17 +135,19 @@ namespace QuadraticAssignmentSolver
             List<int> remainingThreads = Enumerable.Range(0, replicatedThreads).ToList();
 
             // Start searches
-            Solution[][] globalSolutions = new Solution[replicatedThreads][];
+            (Solution[] Solutions, int Iterations)[] globalSolutions =
+                new (Solution[] Solutions, int Iterations)[replicatedThreads];
             if (replicatedThreads == 1)
                 globalSolutions[0] = SingleSearch(0);
             else
-                ParallelFor(0, replicatedThreads, replicatedThreads,
+                Parallel.For(0, replicatedThreads, new ParallelOptions {MaxDegreeOfParallelism = replicatedThreads},
                     index => globalSolutions[index] = SingleSearch(index));
 
-            return GetBestSolutions(globalSolutions);
+            return (GetBestSolutions(globalSolutions.Select(s => s.Solutions).ToArray()),
+                globalSolutions.Select(s => s.Iterations).Average());
 
             // A single instance of the search process
-            Solution[] SingleSearch(int index)
+            (Solution[] Solutions, int Iterations) SingleSearch(int index)
             {
                 PheromoneTable pheromoneTable = pheromoneTables[index];
                 Solution[] bestAtDivisions = new Solution[divisionCount];
@@ -174,6 +179,8 @@ namespace QuadraticAssignmentSolver
 
                     long elapsedTime = DateTime.Now.Ticks - startTime;
 
+                    iteration++;
+
                     // Check if divisions have been reached and results need to be saved and end if final result was saved
                     if (StoreSolutions(divisionCount, timeBetweenDivisions, elapsedTime, bestAtDivisions,
                         bestSolutions[index], ref currentDivision))
@@ -190,8 +197,6 @@ namespace QuadraticAssignmentSolver
                         nextShareTime += timeBetweenSharing;
                         barrier.SignalAndWait();
                     }
-
-                    iteration++;
                 }
 
                 // In case one thread somehow finishes and another sharing occurs afterwards
@@ -201,7 +206,7 @@ namespace QuadraticAssignmentSolver
                     barrier.RemoveParticipant();
                 }
 
-                return bestAtDivisions;
+                return (bestAtDivisions, iteration);
             }
         }
 
@@ -505,8 +510,12 @@ namespace QuadraticAssignmentSolver
         /// <param name="antCount">The number of ants to use in the search.</param>
         /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
         /// <param name="divisionCount">The number of points to return the best solution at throughout the search.</param>
-        /// <returns>An array of the best solution found at each division, the last solution is the best solution found overall.</returns>
-        public Solution[] SequentialSearch(int antCount, double runtime, int divisionCount)
+        /// <returns>
+        ///     An array of the best solution found at each division, the last solution is the best solution found overall,
+        ///     and the number of iterations.
+        /// </returns>
+        public (Solution[] Solutions, double Iterations) SequentialSearch(int antCount, double runtime,
+            int divisionCount)
         {
             return Search(antCount, runtime, divisionCount);
         }
@@ -516,10 +525,11 @@ namespace QuadraticAssignmentSolver
         /// </summary>
         /// <param name="antCount">The number of ants to use in the search.</param>
         /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
-        /// <returns>The best solution found.</returns>
-        public Solution SequentialSearch(int antCount, double runtime)
+        /// <returns>The best solution found and the number of iterations.</returns>
+        public (Solution Solution, double Iterations) SequentialSearch(int antCount, double runtime)
         {
-            return SequentialSearch(antCount, runtime, 1)[0];
+            (Solution[] solutions, double iterations) = SequentialSearch(antCount, runtime, 1);
+            return (solutions[0], iterations);
         }
 
         /// <summary>
@@ -529,8 +539,12 @@ namespace QuadraticAssignmentSolver
         /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
         /// <param name="threads">The number of threads to use.</param>
         /// <param name="divisionCount">The number of points to return the best solution at throughout the search.</param>
-        /// <returns>An array of the best solution found at each division, the last solution is the best solution found overall.</returns>
-        public Solution[] ReplicatedSearch(int antCount, double runtime, int threads, int divisionCount)
+        /// <returns>
+        ///     An array of the best solution found at each division, the last solution is the best solution found overall,
+        ///     and the average number of iterations for each thread.
+        /// </returns>
+        public (Solution[] Solutions, double Iterations) ReplicatedSearch(int antCount, double runtime, int threads,
+            int divisionCount)
         {
             return Search(antCount, runtime, divisionCount, replicatedThreads: threads);
         }
@@ -541,10 +555,11 @@ namespace QuadraticAssignmentSolver
         /// <param name="antCount">The number of ants to use in the search.</param>
         /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
         /// <param name="threads">The number of threads to use.</param>
-        /// <returns>The best solution found.</returns>
-        public Solution ReplicatedSearch(int antCount, double runtime, int threads)
+        /// <returns>The best solution found and the average number of iterations for each thread.</returns>
+        public (Solution Solution, double Iterations) ReplicatedSearch(int antCount, double runtime, int threads)
         {
-            return ReplicatedSearch(antCount, runtime, threads, 1)[0];
+            (Solution[] solutions, double iterations) = ReplicatedSearch(antCount, runtime, threads, 1);
+            return (solutions[0], iterations);
         }
 
         /// <summary>
@@ -554,8 +569,12 @@ namespace QuadraticAssignmentSolver
         /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
         /// <param name="threads">The number of threads to use.</param>
         /// <param name="divisionCount">The number of points to return the best solution at throughout the search.</param>
-        /// <returns>An array of the best solution found at each division, the last solution is the best solution found overall.</returns>
-        public Solution[] SynchronousSearch(int antCount, double runtime, int threads, int divisionCount)
+        /// <returns>
+        ///     An array of the best solution found at each division, the last solution is the best solution found overall,
+        ///     and the number of iterations.
+        /// </returns>
+        public (Solution[] Solutions, double Iterations) SynchronousSearch(int antCount, double runtime, int threads,
+            int divisionCount)
         {
             return Search(antCount, runtime, divisionCount, threads);
         }
@@ -566,10 +585,11 @@ namespace QuadraticAssignmentSolver
         /// <param name="antCount">The number of ants to use in the search.</param>
         /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
         /// <param name="threads">The number of threads to use.</param>
-        /// <returns>The best solution found.</returns>
-        public Solution SynchronousSearch(int antCount, double runtime, int threads)
+        /// <returns>The best solution found and the number of iterations.</returns>
+        public (Solution Solution, double Iterations) SynchronousSearch(int antCount, double runtime, int threads)
         {
-            return SynchronousSearch(antCount, runtime, threads, 1)[0];
+            (Solution[] solutions, double iterations) = SynchronousSearch(antCount, runtime, threads, 1);
+            return (solutions[0], iterations);
         }
 
         /// <summary>
@@ -581,8 +601,12 @@ namespace QuadraticAssignmentSolver
         /// ///
         /// <param name="shareCount">The number of times different search threads should share information.</param>
         /// <param name="divisionCount">The number of points to return the best solution at throughout the search.</param>
-        /// <returns>An array of the best solution found at each division, the last solution is the best solution found overall.</returns>
-        public Solution[] CooperativeSearch(int antCount, double runtime, int threads, int shareCount,
+        /// <returns>
+        ///     An array of the best solution found at each division, the last solution is the best solution found overall,
+        ///     and the average number of iterations for each thread.
+        /// </returns>
+        public (Solution[] Solutions, double Iterations) CooperativeSearch(int antCount, double runtime, int threads,
+            int shareCount,
             int divisionCount)
         {
             return Search(antCount, runtime, divisionCount, replicatedThreads: threads, shareCount: shareCount);
@@ -595,47 +619,12 @@ namespace QuadraticAssignmentSolver
         /// <param name="runtime">The number of iterations without any improvement to stop after.</param>
         /// <param name="shareCount">The number of times different search threads should share information.</param>
         /// <param name="threads">The number of threads to use.</param>
-        /// <returns>The best solution found.</returns>
-        public Solution CooperativeSearch(int antCount, double runtime, int shareCount, int threads)
+        /// <returns>The best solution found and the average number of iterations for each thread.</returns>
+        public (Solution Solution, double Iterations) CooperativeSearch(int antCount, double runtime, int shareCount,
+            int threads)
         {
-            return CooperativeSearch(antCount, runtime, threads, shareCount, 1)[0];
-        }
-
-        /// <summary>
-        ///     Run and action a specified number of times in parallel.
-        /// </summary>
-        /// <param name="fromInclusive">The index to start from (inclusive).</param>
-        /// <param name="toExclusive">The index to stop at (exclusive).</param>
-        /// <param name="maxDegreeOfParallelism">The maximum number of threads to run at a time.</param>
-        /// <param name="action">The action to run. Each call of the action with have an index passed into it.</param>
-        private static void ParallelFor(int fromInclusive, int toExclusive, int maxDegreeOfParallelism,
-            Action<int> action)
-        {
-            int count = toExclusive - fromInclusive;
-            // Queue of indices to run
-            ConcurrentQueue<int> indices = new ConcurrentQueue<int>(Enumerable.Range(fromInclusive, count));
-
-            // Create and run threads then wait for them to finish
-            Enumerable.Range(0, Math.Min(count, maxDegreeOfParallelism))
-                .Select(_ =>
-                {
-                    Thread t = new Thread(MainThread);
-                    t.Start();
-                    return t;
-                })
-                .ToList()
-                .ForEach(thread => thread.Join());
-
-            // Method that makes the thread that is run
-            void MainThread()
-            {
-                // While there are still remaining indices, take one and run it
-                while (indices.TryDequeue(out int index))
-                {
-                    int i = index;
-                    action.Invoke(i);
-                }
-            }
+            (Solution[] solutions, double iterations) = CooperativeSearch(antCount, runtime, threads, shareCount, 1);
+            return (solutions[0], iterations);
         }
     }
 }

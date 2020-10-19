@@ -11,7 +11,7 @@ namespace QuadraticAssignmentSolver.Experiments
         public override double[] RunExperiment()
         {
             return new AntColonyOptimiser(Problem)
-                .SequentialSearch(5, Utils.ProblemTimeDictionary[Problem], 1)
+                .SequentialSearch(5, Utils.ProblemTimeDictionary[Problem], 1).Solutions
                 .Select(s => (double) s.Fitness).ToArray();
         }
 

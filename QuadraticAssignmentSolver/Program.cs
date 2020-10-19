@@ -48,10 +48,13 @@ namespace QuadraticAssignmentSolver
             // Select algorithm
             Solution result = algorithm switch
             {
-                AntColonyOptimiser.Algorithm.Sequential => aco.SequentialSearch(antCount, runtime),
-                AntColonyOptimiser.Algorithm.Replicated => aco.ReplicatedSearch(antCount, runtime, (int) threads),
-                AntColonyOptimiser.Algorithm.Synchronous => aco.SynchronousSearch(antCount, runtime, (int) threads),
-                AntColonyOptimiser.Algorithm.Cooperative => aco.CooperativeSearch(antCount, runtime, 15, (int) threads),
+                AntColonyOptimiser.Algorithm.Sequential => aco.SequentialSearch(antCount, runtime).Solution,
+                AntColonyOptimiser.Algorithm.Replicated => aco.ReplicatedSearch(antCount, runtime, (int) threads)
+                    .Solution,
+                AntColonyOptimiser.Algorithm.Synchronous => aco.SynchronousSearch(antCount, runtime, (int) threads)
+                    .Solution,
+                AntColonyOptimiser.Algorithm.Cooperative => aco.CooperativeSearch(antCount, runtime, 15, (int) threads)
+                    .Solution,
                 _ => throw new ArgumentOutOfRangeException(nameof(algorithm), algorithm, null)
             };
 

@@ -85,16 +85,19 @@ namespace QuadraticAssignmentSolver.Experiments
 #pragma warning restore 8509
             {
                 AllPerformanceTest.TestAlgorithm.Sequential =>
-                    aco.SequentialSearch(5, Utils.ProblemTimeDictionary[Problem], 1).Select(s => (double) s.Fitness)
+                    aco.SequentialSearch(5, Utils.ProblemTimeDictionary[Problem], 1).Solutions
+                        .Select(s => (double) s.Fitness)
                         .ToArray(),
                 AllPerformanceTest.TestAlgorithm.Replicated4 =>
-                    aco.ReplicatedSearch(5, Utils.ProblemTimeDictionary[Problem], 4, 1).Select(s => (double) s.Fitness)
+                    aco.ReplicatedSearch(5, Utils.ProblemTimeDictionary[Problem], 4, 1).Solutions
+                        .Select(s => (double) s.Fitness)
                         .ToArray(),
                 AllPerformanceTest.TestAlgorithm.Synchronous4 =>
-                    aco.SynchronousSearch(5, Utils.ProblemTimeDictionary[Problem], 4, 1).Select(s => (double) s.Fitness)
+                    aco.SynchronousSearch(5, Utils.ProblemTimeDictionary[Problem], 4, 1).Solutions
+                        .Select(s => (double) s.Fitness)
                         .ToArray(),
                 AllPerformanceTest.TestAlgorithm.Cooperative4 =>
-                    aco.CooperativeSearch(5, Utils.ProblemTimeDictionary[Problem], 10, 4, 1)
+                    aco.CooperativeSearch(5, Utils.ProblemTimeDictionary[Problem], 10, 4, 1).Solutions
                         .Select(s => (double) s.Fitness).ToArray()
             };
         }
