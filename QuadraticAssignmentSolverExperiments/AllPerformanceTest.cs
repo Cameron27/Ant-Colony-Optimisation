@@ -76,19 +76,19 @@ namespace QuadraticAssignmentSolver.Experiments
                     .ReplicatedSearch(5, Utils.ProblemTimeDictionary[Problem], 12, DivisionCount)
                     .FitnessesAndIterations()
                     .ToArray(),
-                TestAlgorithm.Synchronous2 => new AntColonyOptimiser(Problem)
+                TestAlgorithm.Synchronous2 => new AntColonyOptimiser(Problem, AntColonyOptimiser.Algorithm.Synchronous)
                     .SynchronousSearch(5, Utils.ProblemTimeDictionary[Problem], 2, DivisionCount)
                     .FitnessesAndIterations()
                     .ToArray(),
-                TestAlgorithm.Synchronous4 => new AntColonyOptimiser(Problem)
+                TestAlgorithm.Synchronous4 => new AntColonyOptimiser(Problem, AntColonyOptimiser.Algorithm.Synchronous)
                     .SynchronousSearch(5, Utils.ProblemTimeDictionary[Problem], 4, DivisionCount)
                     .FitnessesAndIterations()
                     .ToArray(),
-                TestAlgorithm.Synchronous6 => new AntColonyOptimiser(Problem)
+                TestAlgorithm.Synchronous6 => new AntColonyOptimiser(Problem, AntColonyOptimiser.Algorithm.Synchronous)
                     .SynchronousSearch(5, Utils.ProblemTimeDictionary[Problem], 6, DivisionCount)
                     .FitnessesAndIterations()
                     .ToArray(),
-                TestAlgorithm.Synchronous12 => new AntColonyOptimiser(Problem)
+                TestAlgorithm.Synchronous12 => new AntColonyOptimiser(Problem, AntColonyOptimiser.Algorithm.Synchronous)
                     .SynchronousSearch(5, Utils.ProblemTimeDictionary[Problem], 12, DivisionCount)
                     .FitnessesAndIterations()
                     .ToArray(),
