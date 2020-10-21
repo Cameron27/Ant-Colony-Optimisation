@@ -20,9 +20,9 @@ namespace QuadraticAssignmentSolver
             string file,
             [Option('a', Description = "Algorithm to use")]
             AntColonyOptimiser.Algorithm algorithm = AntColonyOptimiser.Algorithm.Sequential,
-            [Option('c', Description = "Number of ants per iteration", ValueName = "1..100")] [Range(1, 100)]
+            [Option('m', Description = "Number of ants per iteration", ValueName = "1..100")] [Range(1, 100)]
             int antCount = 5,
-            [Option('s', Description = "The length of time to run the search for",
+            [Option('r', Description = "The length of time to run the search for",
                 ValueName = "1..1000")]
             [Range(1, 1000)]
             int runtime = 2,
