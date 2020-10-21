@@ -8,17 +8,6 @@ namespace QuadraticAssignmentSolver
     public class PheromoneTable
     {
         /// <summary>
-        ///     The portion of pheromone to be carried over in an update.
-        /// </summary>
-        public double EvaporationRate;
-
-        /// <summary>
-        ///     The approximate probability of generating best know solution if pheromone table has converged and is used to
-        ///     determine what the minimum possible pheromone value should be.
-        /// </summary>
-        public double ProbBest;
-
-        /// <summary>
         ///     The problem being solved.
         /// </summary>
         private readonly Problem _problem;
@@ -27,6 +16,11 @@ namespace QuadraticAssignmentSolver
         ///     The table of pheromones.
         /// </summary>
         private readonly double[] _table;
+
+        /// <summary>
+        ///     Indicates if the table has been initialised yet.
+        /// </summary>
+        private bool _initialised;
 
         /// <summary>
         ///     The maximum possible pheromone value.
@@ -38,13 +32,24 @@ namespace QuadraticAssignmentSolver
         /// </summary>
         private double _min;
 
+        /// <summary>
+        ///     The portion of pheromone to be carried over in an update.
+        /// </summary>
+        public double EvaporationRate;
+
+        /// <summary>
+        ///     The approximate probability of generating best know solution if pheromone table has converged and is used to
+        ///     determine what the minimum possible pheromone value should be.
+        /// </summary>
+        public double ProbBest;
+
         public PheromoneTable(Problem problem, double evaporationRate, double probBest)
         {
             _problem = problem;
-            
+
             // Set all values to 0 to indicate pheromones have not been initialised yet, they will be initialised when
             // first pheromones are deposited
-            _table = Enumerable.Repeat(-1d, _problem.Size * _problem.Size).ToArray();
+            _table = Enumerable.Repeat(1d, _problem.Size * _problem.Size).ToArray();
 
             EvaporationRate = evaporationRate;
             ProbBest = probBest;
@@ -78,10 +83,10 @@ namespace QuadraticAssignmentSolver
         public void DepositPheromones(Solution solution)
         {
             // If this is first update set all values to max
-            if (_table[0] < 0)
+            if (!_initialised)
             {
                 Array.Fill(_table, _max);
-                return;
+                _initialised = true;
             }
 
             // For each location and facility calculate new pheromone level

@@ -4,8 +4,6 @@ using System;
 using System.Linq;
 using QuadraticAssignmentSolver.Experiments.Experimenter;
 
-
-
 namespace QuadraticAssignmentSolver.Experiments
 {
     public class AllPerformanceTest : Experiment
